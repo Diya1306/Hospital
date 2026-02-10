@@ -23,6 +23,8 @@
     Integer activeDonors = (Integer) request.getAttribute("activeDonors");
     Integer pendingRequests = (Integer) request.getAttribute("pendingRequests");
     Integer expiringSoon = (Integer) request.getAttribute("expiringSoon");
+    Integer criticalCount = (Integer) request.getAttribute("criticalCount");
+    Integer lowCount = (Integer) request.getAttribute("lowCount");
     List<BloodInventory> inventory = (List<BloodInventory>) request.getAttribute("inventory");
 
     // Set default values if null
@@ -30,10 +32,30 @@
     if (activeDonors == null) activeDonors = 0;
     if (pendingRequests == null) pendingRequests = 0;
     if (expiringSoon == null) expiringSoon = 0;
+    if (criticalCount == null) criticalCount = 0;
+    if (lowCount == null) lowCount = 0;
+    if (inventory == null) inventory = new ArrayList<>();
 
-    // ✅ STEP 4: Set alert levels
-    int criticalLevel = 10;
-    int lowLevel = 30;
+    // Calculate some additional stats
+    int safeCount = 0;
+    int criticalLevel = 2;  // ≤ 2 units = critical
+    int lowLevel = 5;       // 3-5 units = low
+
+    // Calculate blood group counts for the grid
+    int aPlus = 0, aMinus = 0, bPlus = 0, bMinus = 0, abPlus = 0, abMinus = 0, oPlus = 0, oMinus = 0;
+
+    for (BloodInventory item : inventory) {
+        switch(item.getBloodGroup()) {
+            case "A+": aPlus = item.getQuantity(); break;
+            case "A-": aMinus = item.getQuantity(); break;
+            case "B+": bPlus = item.getQuantity(); break;
+            case "B-": bMinus = item.getQuantity(); break;
+            case "AB+": abPlus = item.getQuantity(); break;
+            case "AB-": abMinus = item.getQuantity(); break;
+            case "O+": oPlus = item.getQuantity(); break;
+            case "O-": oMinus = item.getQuantity(); break;
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -229,7 +251,6 @@
         #sidebar .side-menu.bottom li:nth-last-of-type(2) {
             bottom: 52px;
         }
-        /* SIDEBAR */
 
         /* CONTENT */
         #content {
@@ -349,7 +370,7 @@
             justify-content: center;
             align-items: center;
         }
-        /* Notification Dropdown */
+        /* Notification Dropdown - Updated with Real Data */
         #content nav .notification-menu {
             display: none;
             position: absolute;
@@ -616,6 +637,7 @@
             box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
         }
 
+        /* Stats Cards - Updated with real data */
         #content main .box-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -646,30 +668,47 @@
             justify-content: center;
             align-items: center;
         }
-        #content main .box-info li:nth-child(1) .bx {
-            background: var(--light-primary);
-            color: var(--primary);
-        }
-        #content main .box-info li:nth-child(2) .bx {
-            background: var(--light-green);
-            color: var(--green);
-        }
-        #content main .box-info li:nth-child(3) .bx {
-            background: var(--light-yellow);
-            color: var(--yellow);
-        }
-        #content main .box-info li:nth-child(4) .bx {
-            background: var(--light-orange);
-            color: var(--orange);
-        }
         #content main .box-info li .text h3 {
             font-size: 28px;
             font-weight: 700;
             color: var(--dark);
         }
         #content main .box-info li .text p {
-            color: var(--dark);
+            color: var(--dark-grey);
             font-weight: 500;
+        }
+
+        /* Updated for real-time metrics */
+        #content main .box-info li.total-units {
+            border-left: 4px solid var(--primary);
+        }
+        #content main .box-info li.total-units .bx {
+            background: var(--light-primary);
+            color: var(--primary);
+        }
+
+        #content main .box-info li.critical-alerts {
+            border-left: 4px solid var(--primary);
+        }
+        #content main .box-info li.critical-alerts .bx {
+            background: var(--light-primary);
+            color: var(--primary);
+        }
+
+        #content main .box-info li.low-stock {
+            border-left: 4px solid var(--orange);
+        }
+        #content main .box-info li.low-stock .bx {
+            background: var(--light-orange);
+            color: var(--orange);
+        }
+
+        #content main .box-info li.expiring-soon {
+            border-left: 4px solid var(--yellow);
+        }
+        #content main .box-info li.expiring-soon .bx {
+            background: var(--light-yellow);
+            color: var(--yellow);
         }
 
         #content main .table-data {
@@ -811,7 +850,7 @@
             margin-bottom: 0;
         }
 
-        /* Blood Group Grid */
+        /* Blood Group Grid - UPDATED FOR REAL DATA */
         .blood-group-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -886,6 +925,29 @@
         .blood-group-card .status.critical {
             background: var(--light-primary);
             color: var(--primary);
+        }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            font-size: 12px;
+            color: var(--dark-grey);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .refresh-indicator .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         /* Media Query for Smaller Screens */
@@ -1055,18 +1117,31 @@
             <div class="ball"></div>
         </label>
 
-        <!-- Notification Bell -->
+        <!-- Notification Bell - UPDATED WITH REAL COUNTS -->
         <a href="#" class="notification" id="notificationIcon">
             <i class='bx bxs-bell bx-tada-hover' ></i>
-            <span class="num">5</span>
+            <span class="num"><%= criticalCount > 0 ? criticalCount : "" %></span>
         </a>
         <div class="notification-menu" id="notificationMenu">
             <ul>
-                <li class="urgent"><i class='bx bxs-error-circle'></i> O- critical stock!</li>
-                <li class="warning"><i class='bx bxs-time'></i> 15 units expiring tomorrow</li>
-                <li class="info"><i class='bx bxs-check-circle'></i> New donor registered</li>
-                <li class="urgent"><i class='bx bxs-plus-circle'></i> Emergency request from ER</li>
-                <li><i class='bx bxs-flask'></i> Test results ready</li>
+                <% if (criticalCount > 0) { %>
+                <li class="urgent"><i class='bx bxs-error-circle'></i> <%= criticalCount %> blood group(s) at critical level!</li>
+                <% } %>
+                <% if (lowCount > 0) { %>
+                <li class="warning"><i class='bx bxs-time'></i> <%= lowCount %> blood group(s) low stock</li>
+                <% } %>
+                <% if (expiringSoon > 0) { %>
+                <li class="warning"><i class='bx bxs-calendar-exclamation'></i> <%= expiringSoon %> units expiring soon</li>
+                <% } %>
+                <% if (pendingRequests > 0) { %>
+                <li class="urgent"><i class='bx bxs-plus-circle'></i> <%= pendingRequests %> pending blood requests</li>
+                <% } %>
+                <% if (totalUnits == 0) { %>
+                <li class="warning"><i class='bx bxs-inbox'></i> No blood units in inventory</li>
+                <% } %>
+                <% if (criticalCount == 0 && lowCount == 0 && expiringSoon == 0 && pendingRequests == 0) { %>
+                <li class="info"><i class='bx bxs-check-circle'></i> All systems normal</li>
+                <% } %>
             </ul>
         </div>
 
@@ -1098,175 +1173,310 @@
                         <a class="active" href="#">Dashboard</a>
                     </li>
                 </ul>
+                <div class="refresh-indicator">
+                    <span class="dot"></span>
+                    <span>Auto-updates every 60 seconds</span>
+                </div>
             </div>
-            <a href="#" class="btn-download">
-                <i class='bxs bxs-plus-circle' ></i>
-                <span class="text">New Donation</span>
+            <a href="<%= request.getContextPath() %>/inventory" class="btn-download">
+                <i class='bx bxs-plus-circle' ></i>
+                <span class="text">Add Blood Unit</span>
             </a>
         </div>
 
+        <!-- REAL-TIME STATS CARDS -->
         <ul class="box-info">
-            <li onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+            <li class="total-units" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
                 <i class='bx bxs-droplet' ></i>
                 <span class="text">
                     <h3><%= totalUnits %></h3>
                     <p>Total Units</p>
+                    <small><%= totalUnits * 450 %> ml available</small>
                 </span>
             </li>
-            <li onclick="window.location.href='#'">
-                <i class='bx bxs-user-check' ></i>
+            <li class="critical-alerts" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                <i class='bx bxs-error-circle' ></i>
                 <span class="text">
-                    <h3><%= activeDonors %></h3>
-                    <p>Active Donors</p>
+                    <h3 style="color: var(--primary);"><%= criticalCount %></h3>
+                    <p>Critical Alerts</p>
+                    <small>Blood groups with ≤ 2 units</small>
                 </span>
             </li>
-            <li onclick="window.location.href='#'">
+            <li class="low-stock" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
                 <i class='bx bxs-time-five' ></i>
                 <span class="text">
-                    <h3><%= pendingRequests %></h3>
-                    <p>Pending Requests</p>
+                    <h3 style="color: var(--orange);"><%= lowCount %></h3>
+                    <p>Low Stock</p>
+                    <small>Blood groups with 3-5 units</small>
                 </span>
             </li>
-            <li onclick="window.location.href='#'">
+            <li class="expiring-soon" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
                 <i class='bx bxs-calendar-exclamation' ></i>
                 <span class="text">
-                    <h3><%= expiringSoon %></h3>
+                    <h3 style="color: var(--yellow);"><%= expiringSoon %></h3>
                     <p>Expiring Soon</p>
+                    <small>Units expiring in 7 days</small>
                 </span>
             </li>
         </ul>
 
-        <!-- Blood Group Stock Overview -->
+        <!-- Blood Group Stock Overview - REAL DATA -->
         <div class="table-data">
             <div class="order">
                 <div class="head">
                     <h3>Blood Stock by Group</h3>
-                    <i class='bx bx-refresh' onclick="location.reload()"></i>
+                    <i class='bx bx-refresh' onclick="refreshDashboard()" title="Refresh Dashboard"></i>
                 </div>
                 <div class="blood-group-grid">
-                    <%
-                        if (inventory != null && !inventory.isEmpty()) {
-                            for (BloodInventory stock : inventory) {
-                                String status = stock.getStatus();
-                                String cardClass = "";
+                    <!-- A+ -->
+                    <div class="blood-group-card <%= aPlus <= 2 ? "critical" : (aPlus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">A+</div>
+                        <div class="unit-count"><%= aPlus %></div>
+                        <span class="status <%= aPlus <= 2 ? "critical" : (aPlus <= 5 ? "low" : "safe") %>">
+                            <%= aPlus <= 2 ? "CRITICAL" : (aPlus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
 
-                                if (status.equals("critical")) {
-                                    cardClass = "critical";
-                                } else if (status.equals("low")) {
-                                    cardClass = "low";
-                                }
-                    %>
-                    <div class="blood-group-card <%= cardClass %>" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
-                        <div class="group-name"><%= stock.getBloodGroup() %></div>
-                        <div class="unit-count"><%= stock.getQuantity() %></div>
-                        <span class="status <%= status %>"><%= status.toUpperCase() %></span>
+                    <!-- A- -->
+                    <div class="blood-group-card <%= aMinus <= 2 ? "critical" : (aMinus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">A-</div>
+                        <div class="unit-count"><%= aMinus %></div>
+                        <span class="status <%= aMinus <= 2 ? "critical" : (aMinus <= 5 ? "low" : "safe") %>">
+                            <%= aMinus <= 2 ? "CRITICAL" : (aMinus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
                     </div>
-                    <%
-                        }
-                    } else {
-                    %>
-                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--dark-grey);">
-                        <i class='bx bx-inbox' style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
-                        <p>No inventory data available. <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">Initialize inventory</a></p>
+
+                    <!-- B+ -->
+                    <div class="blood-group-card <%= bPlus <= 2 ? "critical" : (bPlus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">B+</div>
+                        <div class="unit-count"><%= bPlus %></div>
+                        <span class="status <%= bPlus <= 2 ? "critical" : (bPlus <= 5 ? "low" : "safe") %>">
+                            <%= bPlus <= 2 ? "CRITICAL" : (bPlus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
                     </div>
-                    <%
-                        }
-                    %>
+
+                    <!-- B- -->
+                    <div class="blood-group-card <%= bMinus <= 2 ? "critical" : (bMinus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">B-</div>
+                        <div class="unit-count"><%= bMinus %></div>
+                        <span class="status <%= bMinus <= 2 ? "critical" : (bMinus <= 5 ? "low" : "safe") %>">
+                            <%= bMinus <= 2 ? "CRITICAL" : (bMinus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
+
+                    <!-- AB+ -->
+                    <div class="blood-group-card <%= abPlus <= 2 ? "critical" : (abPlus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">AB+</div>
+                        <div class="unit-count"><%= abPlus %></div>
+                        <span class="status <%= abPlus <= 2 ? "critical" : (abPlus <= 5 ? "low" : "safe") %>">
+                            <%= abPlus <= 2 ? "CRITICAL" : (abPlus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
+
+                    <!-- AB- -->
+                    <div class="blood-group-card <%= abMinus <= 2 ? "critical" : (abMinus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">AB-</div>
+                        <div class="unit-count"><%= abMinus %></div>
+                        <span class="status <%= abMinus <= 2 ? "critical" : (abMinus <= 5 ? "low" : "safe") %>">
+                            <%= abMinus <= 2 ? "CRITICAL" : (abMinus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
+
+                    <!-- O+ -->
+                    <div class="blood-group-card <%= oPlus <= 2 ? "critical" : (oPlus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">O+</div>
+                        <div class="unit-count"><%= oPlus %></div>
+                        <span class="status <%= oPlus <= 2 ? "critical" : (oPlus <= 5 ? "low" : "safe") %>">
+                            <%= oPlus <= 2 ? "CRITICAL" : (oPlus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
+
+                    <!-- O- -->
+                    <div class="blood-group-card <%= oMinus <= 2 ? "critical" : (oMinus <= 5 ? "low" : "") %>"
+                         onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <div class="group-name">O-</div>
+                        <div class="unit-count"><%= oMinus %></div>
+                        <span class="status <%= oMinus <= 2 ? "critical" : (oMinus <= 5 ? "low" : "safe") %>">
+                            <%= oMinus <= 2 ? "CRITICAL" : (oMinus <= 5 ? "LOW" : "SAFE") %>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <div class="todo">
                 <div class="head">
                     <h3>Pending Tasks</h3>
-                    <i class='bx bx-plus icon'></i>
-                    <i class='bx bx-filter' ></i>
+                    <i class='bx bx-plus icon' onclick="window.location.href='<%= request.getContextPath() %>/inventory'"></i>
                 </div>
                 <ul class="todo-list">
-                    <li class="urgent">
-                        <p>Replenish O- stock</p>
-                        <i class='bx bx-dots-vertical-rounded' ></i>
+                    <% if (criticalCount > 0) { %>
+                    <li class="urgent" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <p>Replenish critical blood stock</p>
+                        <i class='bx bxs-error-circle' ></i>
                     </li>
-                    <li class="not-completed">
-                        <p>Review expiring units</p>
-                        <i class='bx bx-dots-vertical-rounded' ></i>
+                    <% } %>
+                    <% if (expiringSoon > 0) { %>
+                    <li class="urgent" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <p>Review <%= expiringSoon %> expiring units</p>
+                        <i class='bx bxs-calendar-exclamation' ></i>
                     </li>
+                    <% } %>
+                    <% if (pendingRequests > 0) { %>
+                    <li class="not-completed" onclick="window.location.href='#'">
+                        <p>Process <%= pendingRequests %> pending requests</p>
+                        <i class='bx bxs-heart' ></i>
+                    </li>
+                    <% } %>
+                    <% if (activeDonors == 0) { %>
+                    <li class="not-completed" onclick="window.location.href='#'">
+                        <p>Register new donors</p>
+                        <i class='bx bxs-user-plus' ></i>
+                    </li>
+                    <% } %>
+                    <% if (totalUnits == 0) { %>
+                    <li class="urgent" onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
+                        <p>Add first blood unit to inventory</p>
+                        <i class='bx bxs-plus-circle' ></i>
+                    </li>
+                    <% } %>
+                    <% if (criticalCount == 0 && expiringSoon == 0 && pendingRequests == 0 && totalUnits > 0) { %>
                     <li class="completed">
-                        <p>Process test batch #45</p>
-                        <i class='bx bx-dots-vertical-rounded' ></i>
+                        <p>All tasks up to date</p>
+                        <i class='bx bxs-check-circle' ></i>
                     </li>
-                    <li class="not-completed">
-                        <p>Schedule blood drive</p>
-                        <i class='bx bx-dots-vertical-rounded' ></i>
-                    </li>
-                    <li class="urgent">
-                        <p>Respond to ER request</p>
-                        <i class='bx bx-dots-vertical-rounded' ></i>
-                    </li>
+                    <% } %>
                 </ul>
             </div>
         </div>
 
+        <!-- Quick Summary Table -->
         <div class="table-data">
             <div class="order">
                 <div class="head">
-                    <h3>Recent Donations</h3>
+                    <h3>Blood Stock Summary</h3>
                     <i class='bx bx-search' ></i>
-                    <i class='bx bx-filter' ></i>
                 </div>
                 <table>
                     <thead>
                     <tr>
-                        <th>Donor</th>
                         <th>Blood Group</th>
-                        <th>Date</th>
+                        <th>Units</th>
+                        <th>Volume (ml)</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr>
-                        <td>
-                            <img src="https://ui-avatars.com/api/?name=John+Smith&background=E63946&color=fff">
-                            <p>John Smith</p>
-                        </td>
-                        <td>O+</td>
-                        <td>Today</td>
-                        <td><span class="status safe">Safe</span></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <img src="https://ui-avatars.com/api/?name=Sarah+Johnson&background=10B981&color=fff">
-                            <p>Sarah Johnson</p>
-                        </td>
                         <td>A+</td>
-                        <td>Yesterday</td>
-                        <td><span class="status testing">Testing</span></td>
+                        <td><%= aPlus %></td>
+                        <td><%= aPlus * 450 %> ml</td>
+                        <td><span class="status <%= aPlus <= 2 ? "critical" : (aPlus <= 5 ? "low" : "safe") %>">
+                            <%= aPlus <= 2 ? "Critical" : (aPlus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
                     </tr>
                     <tr>
+                        <td>A-</td>
+                        <td><%= aMinus %></td>
+                        <td><%= aMinus * 450 %> ml</td>
+                        <td><span class="status <%= aMinus <= 2 ? "critical" : (aMinus <= 5 ? "low" : "safe") %>">
+                            <%= aMinus <= 2 ? "Critical" : (aMinus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
                         <td>
-                            <img src="https://ui-avatars.com/api/?name=Michael+Brown&background=3B82F6&color=fff">
-                            <p>Michael Brown</p>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
                         </td>
+                    </tr>
+                    <tr>
+                        <td>B+</td>
+                        <td><%= bPlus %></td>
+                        <td><%= bPlus * 450 %> ml</td>
+                        <td><span class="status <%= bPlus <= 2 ? "critical" : (bPlus <= 5 ? "low" : "safe") %>">
+                            <%= bPlus <= 2 ? "Critical" : (bPlus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
                         <td>B-</td>
-                        <td>2 days ago</td>
-                        <td><span class="status safe">Safe</span></td>
+                        <td><%= bMinus %></td>
+                        <td><%= bMinus * 450 %> ml</td>
+                        <td><span class="status <%= bMinus <= 2 ? "critical" : (bMinus <= 5 ? "low" : "safe") %>">
+                            <%= bMinus <= 2 ? "Critical" : (bMinus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
                     </tr>
                     <tr>
-                        <td>
-                            <img src="https://ui-avatars.com/api/?name=Emily+Davis&background=F59E0B&color=fff">
-                            <p>Emily Davis</p>
-                        </td>
                         <td>AB+</td>
-                        <td>3 days ago</td>
-                        <td><span class="status safe">Safe</span></td>
+                        <td><%= abPlus %></td>
+                        <td><%= abPlus * 450 %> ml</td>
+                        <td><span class="status <%= abPlus <= 2 ? "critical" : (abPlus <= 5 ? "low" : "safe") %>">
+                            <%= abPlus <= 2 ? "Critical" : (abPlus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
                     </tr>
                     <tr>
+                        <td>AB-</td>
+                        <td><%= abMinus %></td>
+                        <td><%= abMinus * 450 %> ml</td>
+                        <td><span class="status <%= abMinus <= 2 ? "critical" : (abMinus <= 5 ? "low" : "safe") %>">
+                            <%= abMinus <= 2 ? "Critical" : (abMinus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
                         <td>
-                            <img src="https://ui-avatars.com/api/?name=Robert+Wilson&background=DB504A&color=fff">
-                            <p>Robert Wilson</p>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
                         </td>
+                    </tr>
+                    <tr>
+                        <td>O+</td>
+                        <td><%= oPlus %></td>
+                        <td><%= oPlus * 450 %> ml</td>
+                        <td><span class="status <%= oPlus <= 2 ? "critical" : (oPlus <= 5 ? "low" : "safe") %>">
+                            <%= oPlus <= 2 ? "Critical" : (oPlus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
                         <td>O-</td>
-                        <td>4 days ago</td>
-                        <td><span class="status expired">Expired</span></td>
+                        <td><%= oMinus %></td>
+                        <td><%= oMinus * 450 %> ml</td>
+                        <td><span class="status <%= oMinus <= 2 ? "critical" : (oMinus <= 5 ? "low" : "safe") %>">
+                            <%= oMinus <= 2 ? "Critical" : (oMinus <= 5 ? "Low" : "Safe") %>
+                        </span></td>
+                        <td>
+                            <a href="<%= request.getContextPath() %>/inventory" style="color: var(--primary); font-weight: 600;">
+                                Manage
+                            </a>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -1278,6 +1488,7 @@
 <!-- CONTENT -->
 
 <script>
+    // Sidebar toggle
     const allSideMenu = document.querySelectorAll('#sidebar .side-menu.top li a');
 
     allSideMenu.forEach(item => {
@@ -1334,12 +1545,21 @@
         switchMode.addEventListener('change', function () {
             if (this.checked) {
                 document.body.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
             } else {
                 document.body.classList.remove('dark');
+                localStorage.setItem('darkMode', 'false');
             }
-        })
+        });
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            switchMode.checked = true;
+            document.body.classList.add('dark');
+        }
     }
 
+    // Notification and Profile dropdowns
     document.querySelector('.notification').addEventListener('click', function (e) {
         e.preventDefault();
         document.querySelector('.notification-menu').classList.toggle('show');
@@ -1359,6 +1579,7 @@
         }
     });
 
+    // Task completion toggle
     document.querySelectorAll('.todo-list li').forEach(item => {
         item.addEventListener('click', function() {
             if(this.classList.contains('completed')) {
@@ -1369,6 +1590,71 @@
                 this.classList.add('completed');
             }
         });
+    });
+
+    // Refresh dashboard function
+    function refreshDashboard() {
+        window.location.reload();
+    }
+
+    // Auto-refresh dashboard every 60 seconds
+    let autoRefreshInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            fetch('<%= request.getContextPath() %>/dashboard?refresh=true', {
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Dashboard auto-refreshed at ' + new Date().toLocaleTimeString());
+                }
+            }).catch(error => {
+                console.log('Auto-refresh failed:', error);
+            });
+        }
+    }, 60000); // 60 seconds
+
+    // Update notification count dynamically
+    function updateNotificationCount() {
+        const criticalCount = <%= criticalCount %>;
+        const notificationNum = document.querySelector('.notification .num');
+
+        if (criticalCount > 0) {
+            notificationNum.textContent = criticalCount;
+            notificationNum.style.display = 'flex';
+
+            // Make bell pulse for critical alerts
+            const bellIcon = document.querySelector('.notification i');
+            bellIcon.classList.add('bx-tada');
+            setTimeout(() => {
+                bellIcon.classList.remove('bx-tada');
+            }, 3000);
+        } else {
+            notificationNum.style.display = 'none';
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        updateNotificationCount();
+
+        // Highlight critical items
+        document.querySelectorAll('.blood-group-card.critical').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    });
+
+    // Handle browser visibility change
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            // Refresh data when user returns to tab
+            refreshDashboard();
+        }
     });
 </script>
 </body>

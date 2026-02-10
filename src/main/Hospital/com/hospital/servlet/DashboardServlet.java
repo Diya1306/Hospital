@@ -33,21 +33,41 @@ public class DashboardServlet extends HttpServlet {
 
         int hospitalId = (int) session.getAttribute("hospitalId");
 
-        // Get real data from inventory
-        List<BloodInventory> inventory = inventoryDAO.getInventoryByHospital(hospitalId);
-        int totalUnits = inventoryDAO.getTotalUnits(hospitalId);
+        // Get inventory summary for dashboard
+        List<BloodInventory> inventory = inventoryDAO.getInventorySummary(hospitalId);
 
-        // Calculate metrics
-        int expiringSoon = 0; // You can implement this later
-        int pendingRequests = 0; // You can implement this later
-        int activeDonors = 0; // You can implement this later
+        // Get dashboard metrics
+        int totalUnits = inventoryDAO.getTotalUnits(hospitalId);
+        int criticalCount = inventoryDAO.getCriticalLevelsCount(hospitalId);
+        int lowCount = inventoryDAO.getLowStockCount(hospitalId);
+        int expiringSoon = inventoryDAO.getExpiringSoonCount(hospitalId);
+
+        // Get pending test count
+        int pendingTests = getPendingTestsCount(hospitalId);
+
+        // Get total donors count (you'll need a DonorDAO for this)
+        int totalDonors = getTotalDonorsCount(hospitalId);
 
         request.setAttribute("inventory", inventory);
         request.setAttribute("totalUnits", totalUnits);
-        request.setAttribute("activeDonors", activeDonors);
-        request.setAttribute("pendingRequests", pendingRequests);
+        request.setAttribute("criticalCount", criticalCount);
+        request.setAttribute("lowCount", lowCount);
         request.setAttribute("expiringSoon", expiringSoon);
+        request.setAttribute("pendingTests", pendingTests);
+        request.setAttribute("totalDonors", totalDonors);
 
         request.getRequestDispatcher("/dashboard.jsp").forward(request, response);
+    }
+
+    private int getPendingTestsCount(int hospitalId) {
+        // This should query the database for pending tests
+        // For now, returning a placeholder
+        return 0;
+    }
+
+    private int getTotalDonorsCount(int hospitalId) {
+        // This should query the database for total donors
+        // For now, returning a placeholder
+        return 0;
     }
 }
