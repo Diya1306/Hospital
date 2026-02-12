@@ -13,13 +13,16 @@
     String hospitalName = hospital != null ? hospital.getHospitalName() : "Hospital";
 
     List<BloodInventory> inventory = (List<BloodInventory>) request.getAttribute("inventory");
+    List<BloodInventory> allBloodUnits = (List<BloodInventory>) request.getAttribute("allBloodUnits");
     Integer totalUnits = (Integer) request.getAttribute("totalUnits");
     Integer criticalCount = (Integer) request.getAttribute("criticalCount");
     Integer lowCount = (Integer) request.getAttribute("lowCount");
+    Integer expiringSoon = (Integer) request.getAttribute("expiringSoon");
 
     if (totalUnits == null) totalUnits = 0;
     if (criticalCount == null) criticalCount = 0;
     if (lowCount == null) lowCount = 0;
+    if (expiringSoon == null) expiringSoon = 0;
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,7 +93,6 @@
             font-family: var(--poppins);
         }
 
-        /* Copy all the sidebar and navbar CSS from dashboard.jsp */
         /* SIDEBAR */
         #sidebar {
             position: fixed;
@@ -227,7 +229,7 @@
             left: 70px;
         }
 
-        /* NAVBAR - Copy from dashboard.jsp */
+        /* NAVBAR */
         #content nav {
             height: 64px;
             background: var(--light);
@@ -286,6 +288,12 @@
             padding: 24px;
             border-radius: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: .3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
 
         .stat-card h3 {
@@ -307,6 +315,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
+            margin-bottom: 32px;
         }
 
         .inventory-card {
@@ -377,42 +386,6 @@
             text-align: center;
         }
 
-        .update-form {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .update-form input {
-            flex: 1;
-            padding: 10px;
-            border: 2px solid var(--grey);
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: var(--poppins);
-            outline: none;
-            transition: .3s ease;
-        }
-
-        .update-form input:focus {
-            border-color: var(--primary);
-        }
-
-        .update-form button {
-            padding: 10px 16px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: .3s ease;
-        }
-
-        .update-form button:hover {
-            background: var(--primary-dark);
-        }
-
         /* Alert Messages */
         .alert {
             padding: 16px 20px;
@@ -424,11 +397,13 @@
         .alert.success {
             background: var(--light-green);
             color: var(--green);
+            border-left: 4px solid var(--green);
         }
 
         .alert.error {
             background: var(--light-primary);
             color: var(--primary);
+            border-left: 4px solid var(--primary);
         }
 
         /* Modal */
@@ -455,6 +430,8 @@
             border-radius: 16px;
             max-width: 500px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-content h2 {
@@ -481,12 +458,20 @@
             border-radius: 8px;
             font-size: 14px;
             font-family: var(--poppins);
+            transition: .3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
         .modal-buttons {
             display: flex;
             gap: 12px;
             justify-content: flex-end;
+            margin-top: 24px;
         }
 
         .btn {
@@ -496,6 +481,9 @@
             cursor: pointer;
             border: none;
             transition: .3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-primary {
@@ -512,9 +500,88 @@
             color: var(--dark);
         }
 
+        .btn-secondary:hover {
+            background: var(--dark-grey);
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--light);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            margin-top: 20px;
+        }
+
+        .data-table th {
+            background: var(--grey);
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-top: 1px solid var(--grey);
+            color: var(--dark);
+        }
+
+        .data-table tr:hover {
+            background: var(--grey);
+        }
+
+        .action-select {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--grey);
+            background: var(--light);
+            color: var(--dark);
+            font-family: var(--poppins);
+            cursor: pointer;
+            transition: .3s ease;
+        }
+
+        .action-select:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--dark-grey);
+            grid-column: 1 / -1;
+        }
+
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--dark-grey);
+        }
+
+        .no-data h3 {
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
         @media screen and (max-width: 768px) {
             .inventory-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .data-table {
+                display: block;
+                overflow-x: auto;
             }
         }
     </style>
@@ -599,8 +666,8 @@
     <main>
         <div class="head-title">
             <h1>Blood Inventory</h1>
-            <button class="btn btn-primary" onclick="openUpdateModal()">
-                <i class='bx bx-plus'></i> Quick Update
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class='bx bx-plus'></i> Add New Blood Unit
             </button>
         </div>
 
@@ -621,23 +688,39 @@
             <div class="stat-card">
                 <h3>Total Units</h3>
                 <div class="value"><%= totalUnits %></div>
+                <p style="font-size: 12px; color: var(--dark-grey); margin-top: 5px;">
+                    Available and tested units
+                </p>
             </div>
             <div class="stat-card">
                 <h3>Critical Levels</h3>
                 <div class="value" style="color: var(--primary);"><%= criticalCount %></div>
+                <p style="font-size: 12px; color: var(--dark-grey); margin-top: 5px;">
+                    Blood groups with ≤ 2 units
+                </p>
             </div>
             <div class="stat-card">
                 <h3>Low Stock</h3>
                 <div class="value" style="color: var(--orange);"><%= lowCount %></div>
+                <p style="font-size: 12px; color: var(--dark-grey); margin-top: 5px;">
+                    Blood groups with 3-5 units
+                </p>
+            </div>
+            <div class="stat-card">
+                <h3>Expiring Soon</h3>
+                <div class="value" style="color: var(--yellow);"><%= expiringSoon %></div>
+                <p style="font-size: 12px; color: var(--dark-grey); margin-top: 5px;">
+                    Units expiring in 7 days
+                </p>
             </div>
         </div>
 
-        <!-- Inventory Grid -->
+        <!-- Blood Groups Summary -->
         <div class="inventory-grid">
             <%
-                if (inventory != null) {
+                if (inventory != null && !inventory.isEmpty()) {
                     for (BloodInventory item : inventory) {
-                        String status = item.getStatus();
+                        String status = item.getStockStatus();
                         String cardClass = status.equals("critical") || status.equals("low") ? status : "";
             %>
             <div class="inventory-card <%= cardClass %>">
@@ -645,29 +728,98 @@
                     <span class="blood-type"><%= item.getBloodGroup() %></span>
                     <span class="status-badge <%= status %>"><%= status.toUpperCase() %></span>
                 </div>
-                <div class="quantity-display"><%= item.getQuantity() %></div>
-                <form class="update-form" method="post" action="<%= request.getContextPath() %>/inventory">
-                    <input type="hidden" name="bloodGroup" value="<%= item.getBloodGroup() %>">
-                    <input type="hidden" name="reason" value="Manual update">
-                    <input type="number" name="quantity" placeholder="New quantity" min="0" required>
-                    <button type="submit"><i class='bx bx-check'></i></button>
-                </form>
+                <div class="quantity-display"><%= item.getQuantity() %> units</div>
+                <div style="text-align: center; font-size: 14px; color: var(--dark-grey);">
+                    ≈ <%= item.getQuantity() * 450 %> ml
+                </div>
             </div>
             <%
-                    }
+                }
+            } else {
+            %>
+            <div class="no-data">
+                <i class='bx bx-inbox'></i>
+                <h3>No inventory data</h3>
+                <p>Add your first blood unit to get started</p>
+            </div>
+            <%
                 }
             %>
         </div>
+
+        <!-- Detailed Table -->
+        <h2 style="margin: 40px 0 20px; color: var(--dark);">All Blood Units</h2>
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>Unit ID</th>
+                <th>Blood Group</th>
+                <th>Donor</th>
+                <th>Donation Date</th>
+                <th>Expiry Date</th>
+                <th>Testing Status</th>
+                <th>Current Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <%
+                if (allBloodUnits != null && !allBloodUnits.isEmpty()) {
+                    for (BloodInventory unit : allBloodUnits) {
+            %>
+            <tr>
+                <td><%= unit.getUnitId() %></td>
+                <td style="font-weight: 600;"><%= unit.getBloodGroup() %></td>
+                <td><%= unit.getDonorName() != null ? unit.getDonorName() : "N/A" %></td>
+                <td><%= unit.getDonationDate() %></td>
+                <td style="<%= unit.isExpired() ? "color: var(--primary); font-weight: 600;" : "" %>">
+                    <%= unit.getExpiryDate() %>
+                    <%= unit.isExpired() ? "(Expired)" : "" %>
+                </td>
+                <td>
+                        <span class="status-badge <%= unit.getTestingStatus().toLowerCase() %>">
+                            <%= unit.getTestingStatus() %>
+                        </span>
+                </td>
+                <td>
+                        <span class="status-badge <%= unit.getCurrentStatus().toLowerCase() %>">
+                            <%= unit.getCurrentStatus() %>
+                        </span>
+                </td>
+                <td>
+                    <select class="action-select" onchange="updateTestingStatus(<%= unit.getUnitId() %>, this.value)">
+                        <option value="Pending" <%= "Pending".equals(unit.getTestingStatus()) ? "selected" : "" %>>Pending</option>
+                        <option value="Passed" <%= "Passed".equals(unit.getTestingStatus()) ? "selected" : "" %>>Passed</option>
+                        <option value="Failed" <%= "Failed".equals(unit.getTestingStatus()) ? "selected" : "" %>>Failed</option>
+                    </select>
+                </td>
+            </tr>
+            <%
+                }
+            } else {
+            %>
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 40px; color: var(--dark-grey);">
+                    No blood units found. Add your first blood unit above.
+                </td>
+            </tr>
+            <%
+                }
+            %>
+            </tbody>
+        </table>
     </main>
 </section>
 
-<!-- Update Modal -->
-<div class="modal" id="updateModal">
+<!-- Add Blood Unit Modal -->
+<div class="modal" id="addModal">
     <div class="modal-content">
-        <h2>Update Inventory</h2>
+        <h2>Add New Blood Unit</h2>
         <form method="post" action="<%= request.getContextPath() %>/inventory">
+            <input type="hidden" name="action" value="add">
+
             <div class="form-group">
-                <label>Blood Group</label>
+                <label>Blood Group *</label>
                 <select name="bloodGroup" required>
                     <option value="">Select blood group</option>
                     <option value="A+">A+</option>
@@ -680,23 +832,69 @@
                     <option value="O-">O-</option>
                 </select>
             </div>
+
             <div class="form-group">
-                <label>New Quantity</label>
-                <input type="number" name="quantity" min="0" required>
+                <label>Quantity (Units) *</label>
+                <input type="number" name="quantity" min="1" max="10" required placeholder="1 unit = 450ml">
+                <small style="color: var(--dark-grey); display: block; margin-top: 4px;">1 unit = 450ml of blood</small>
             </div>
+
             <div class="form-group">
-                <label>Reason</label>
-                <input type="text" name="reason" placeholder="E.g., New donation batch" required>
+                <label>Donation Date *</label>
+                <input type="date" name="donationDate" required
+                       value="<%= new java.sql.Date(System.currentTimeMillis()) %>">
+                <small style="color: var(--dark-grey); display: block; margin-top: 4px;">
+                    Expiry date will be automatically calculated (42 days)
+                </small>
             </div>
+
+            <div class="form-group">
+                <label>Donor ID *</label>
+                <input type="number" name="donorId" required placeholder="Enter donor ID">
+            </div>
+
+            <div class="form-group">
+                <label>Donor Name *</label>
+                <input type="text" name="donorName" required placeholder="Enter donor name">
+            </div>
+
+            <div class="form-group">
+                <label>Donor Blood Group *</label>
+                <select name="donorBloodGroup" required>
+                    <option value="">Select donor blood group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+                <small style="color: var(--dark-grey); display: block; margin-top: 4px;">
+                    Must match the blood unit group above
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Storage Location</label>
+                <input type="text" name="storageLocation" placeholder="E.g., Fridge A, Shelf 2">
+            </div>
+
             <div class="modal-buttons">
-                <button type="button" class="btn btn-secondary" onclick="closeUpdateModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Update</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddModal()">
+                    <i class='bx bx-x'></i> Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class='bx bx-plus'></i> Add Blood Unit
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+    // Sidebar toggle
     const menuBar = document.querySelector('#content nav .bx.bx-menu');
     const sidebar = document.getElementById('sidebar');
 
@@ -704,21 +902,75 @@
         sidebar.classList.toggle('hide');
     });
 
-    function openUpdateModal() {
-        document.getElementById('updateModal').classList.add('show');
+    // Modal functions
+    function openAddModal() {
+        document.getElementById('addModal').classList.add('show');
     }
 
-    function closeUpdateModal() {
-        document.getElementById('updateModal').classList.remove('show');
+    function closeAddModal() {
+        document.getElementById('addModal').classList.remove('show');
+    }
+
+    // Update testing status
+    function updateTestingStatus(unitId, status) {
+        if (confirm('Are you sure you want to update testing status to "' + status + '"?')) {
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '<%= request.getContextPath() %>/inventory';
+
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'updateStatus';
+            form.appendChild(actionInput);
+
+            const unitIdInput = document.createElement('input');
+            unitIdInput.type = 'hidden';
+            unitIdInput.name = 'unitId';
+            unitIdInput.value = unitId;
+            form.appendChild(unitIdInput);
+
+            const statusInput = document.createElement('input');
+            statusInput.type = 'hidden';
+            statusInput.name = 'testingStatus';
+            statusInput.value = status;
+            form.appendChild(statusInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            // Reset select to original value
+            window.location.reload();
+        }
     }
 
     // Close modal when clicking outside
     window.addEventListener('click', function(e) {
-        const modal = document.getElementById('updateModal');
-        if (e.target === modal) {
-            closeUpdateModal();
+        const addModal = document.getElementById('addModal');
+        if (e.target === addModal) {
+            closeAddModal();
         }
     });
+
+    // Set today's date as default for donation date
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const donationDateInput = document.querySelector('input[name="donationDate"]');
+        if (donationDateInput) {
+            donationDateInput.value = today;
+            donationDateInput.max = today; // Can't select future dates
+        }
+    });
+
+    // Auto-refresh inventory every 60 seconds
+    setInterval(function() {
+        // Only refresh if user is on inventory page
+        if (window.location.pathname.includes('/inventory')) {
+            // You can add a subtle notification or just reload
+            console.log('Auto-refreshing inventory...');
+            window.location.reload();
+        }
+    }, 60000); // 60 seconds
 </script>
 
 </body>
