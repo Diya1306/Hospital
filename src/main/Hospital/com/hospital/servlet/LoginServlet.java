@@ -1,89 +1,93 @@
-package com.hospital.servlet;
+package com.Donor_registration.servlet;
 
-import com.hospital.model.Hospital;
-import com.hospital.dao.HospitalDAO;
+import com.Donor_registration.database.DonorDAO;
+import com.Donor_registration.model.Donor;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.*;
+import jakarta.servlet.http.*;
 import java.io.IOException;
 
-@WebServlet("/login")
+@WebServlet("/LoginServlet")
 public class LoginServlet extends HttpServlet {
+    private static final long serialVersionUID = 1L;
 
-    private HospitalDAO hospitalDAO;
+    private DonorDAO donorDAO;
 
     @Override
     public void init() throws ServletException {
-        hospitalDAO = new HospitalDAO();
+        donorDAO = new DonorDAO();
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Set character encoding
-        request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
 
-        // Get form parameters
-        String identifier = request.getParameter("identifier");
-        String password = request.getParameter("password");
+        String contextPath = request.getContextPath();
 
-        // Validate input
-        if (identifier == null || identifier.trim().isEmpty() ||
-                password == null || password.isEmpty()) {
+        try {
+            String email = request.getParameter("email");
+            String password = request.getParameter("password");
 
-            request.setAttribute("error", "Please enter both email/hospital ID and password!");
-            request.setAttribute("identifier", identifier);
-            request.getRequestDispatcher("/login.jsp").forward(request, response);
-            return;
-        }
+            // Validate input
+            if (email == null || email.trim().isEmpty() ||
+                    password == null || password.trim().isEmpty()) {
+                response.sendRedirect(contextPath + "/donorLogin.jsp?error=required");
+                return;
+            }
 
-        // Validate credentials
-        Hospital hospital = hospitalDAO.validateLogin(identifier.trim(), password);
+            email = email.trim().toLowerCase();
+            password = password.trim();
 
-        if (hospital != null) {
-            // Login successful - create session
-            HttpSession session = request.getSession();
-            session.setAttribute("hospital", hospital);
-            session.setAttribute("hospitalId", hospital.getHospitalId());
-            session.setAttribute("hospitalName", hospital.getHospitalName());
-            session.setAttribute("email", hospital.getEmail());
-            session.setAttribute("isLoggedIn", true);
+            // Authenticate donor
+            Donor donor = donorDAO.loginDonor(email, password);
 
-            // Set session timeout (30 minutes)
-            session.setMaxInactiveInterval(30 * 60);
+            if (donor != null) {
+                System.out.println("✅ Login successful for: " + email);
 
-            // Log successful login
-            System.out.println("Login successful for: " + hospital.getHospitalName());
+                // Invalidate old session for security
+                HttpSession oldSession = request.getSession(false);
+                if (oldSession != null) {
+                    oldSession.invalidate();
+                }
 
-            // Redirect to dashboard
-            response.sendRedirect(request.getContextPath() + "/dashboard.jsp");
-        } else {
-            // Login failed
-            request.setAttribute("error", "Invalid credentials! Please check your email/hospital ID and password.");
-            request.setAttribute("identifier", identifier);
-            request.getRequestDispatcher("/login.jsp").forward(request, response);
+                // Create new session
+                HttpSession session = request.getSession(true);
+                session.setAttribute("donor", donor);
+                session.setAttribute("donorEmail", donor.getEmail());
+                session.setAttribute("donorName", donor.getName());
+                session.setMaxInactiveInterval(30 * 60); // 30 minutes
+
+                response.sendRedirect(contextPath + "/donorDashboard.jsp");
+
+            } else {
+                System.out.println("❌ Login failed for: " + email);
+                response.sendRedirect(contextPath + "/donorLogin.jsp?error=invalid");
+            }
+
+        } catch (Exception e) {
+            System.err.println("🔴 Error during login: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(contextPath + "/donorLogin.jsp?error=server_error");
         }
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Check if user is already logged in
+
+        String contextPath = request.getContextPath();
+
         HttpSession session = request.getSession(false);
 
-        if (session != null && session.getAttribute("isLoggedIn") != null &&
-                (Boolean) session.getAttribute("isLoggedIn")) {
-            // Already logged in, redirect to dashboard
-            response.sendRedirect(request.getContextPath() + "/dashboard.jsp");
+        if (session != null && session.getAttribute("donor") != null) {
+            // Already logged in
+            response.sendRedirect(contextPath + "/donorDashboard.jsp");
         } else {
-            // Not logged in, show login page
-            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            response.sendRedirect(contextPath + "/donorLogin.jsp");
         }
     }
 }
