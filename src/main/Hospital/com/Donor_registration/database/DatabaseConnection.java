@@ -11,7 +11,7 @@ public class DatabaseConnection {
     // Database credentials - CHANGE THESE ACCORDING TO YOUR SETUP
     private static final String DB_URL = "jdbc:mysql://localhost:3306/blood_donor_db";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "krisha"; // Change this to your MySQL password
+    private static final String DB_PASSWORD = "Diya@2006"; // Change this to your MySQL password
     
     // JDBC Driver
     private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
