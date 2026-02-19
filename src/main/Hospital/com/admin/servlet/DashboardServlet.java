@@ -1,7 +1,8 @@
 package com.admin.servlet;
 
-import com.admin.dao.AdminDAO;
+import com.admin.dao.InventoryDAO;
 import com.admin.model.Admin;
+import com.admin.model.BloodInventory;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -9,41 +10,50 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
 
-@WebServlet("/dashboard")
+import java.io.IOException;
+import java.util.List;
+
+@WebServlet(name = "DashboardServlet", urlPatterns = {"/dashboard"})
 public class DashboardServlet extends HttpServlet {
 
-    // GET - Load dashboard page
+    private InventoryDAO inventoryDAO;
+
+    @Override
+    public void init() {
+        inventoryDAO = new InventoryDAO();
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Auth check (filter also protects this, but double-check here)
         HttpSession session = request.getSession(false);
         if (session == null || !Boolean.TRUE.equals(session.getAttribute("isLoggedIn"))) {
             response.sendRedirect(request.getContextPath() + "/admin-login");
             return;
         }
 
-        Admin admin = (Admin) session.getAttribute("admin");
-        int adminId = (admin != null) ? admin.getAdminId() : 0;
+        int adminId = (int) session.getAttribute("adminId");
 
-        // ── Placeholder stats (wire up your DAOs here when inventory is ready) ──
-        // e.g.  BloodInventoryDAO inventoryDAO = new BloodInventoryDAO();
-        //       List<BloodInventory> inventory  = inventoryDAO.getInventoryByAdminId(adminId);
-        //       int totalUnits = inventory.stream().mapToInt(BloodInventory::getQuantity).sum();
+        // ── Pull live stats from InventoryDAO ─────────────────────────────
+        int totalUnits    = inventoryDAO.getTotalUnits(adminId);
+        int criticalCount = inventoryDAO.getCriticalLevelsCount(adminId);
+        int lowCount      = inventoryDAO.getLowStockCount(adminId);
+        int expiringSoon  = inventoryDAO.getExpiringSoonCount(adminId);
 
-        request.setAttribute("totalUnits",     0);
-        request.setAttribute("criticalCount",  0);
-        request.setAttribute("lowCount",       0);
-        request.setAttribute("expiringSoon",   0);
-        request.setAttribute("activeDonors",   0);
-        request.setAttribute("pendingRequests", 0);
-        request.setAttribute("inventory",      new java.util.ArrayList<>());
+        // Blood group summary for grid display
+        List<BloodInventory> inventory = inventoryDAO.getInventorySummary(adminId);
 
-        request.getRequestDispatcher("/admin_dashboard.jsp")
-                .forward(request, response);
+        // ── Set attributes for admin_dashboard.jsp ────────────────────────
+        request.setAttribute("totalUnits",      totalUnits);
+        request.setAttribute("criticalCount",   criticalCount);
+        request.setAttribute("lowCount",        lowCount);
+        request.setAttribute("expiringSoon",    expiringSoon);
+        request.setAttribute("pendingRequests", 0);   // plug in RequestDAO later
+        request.setAttribute("activeDonors",    0);   // plug in DonorDAO later
+        request.setAttribute("inventory",       inventory);
+
+        request.getRequestDispatcher("/admin_dashboard.jsp").forward(request, response);
     }
 }
-

@@ -27,7 +27,8 @@ public class AdminLoginServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         if (session != null && Boolean.TRUE.equals(session.getAttribute("isLoggedIn"))) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
+            // Already logged in → go straight to dashboard
+            response.sendRedirect(request.getContextPath() + "/admin_dashboard.jsp");  // ✅ CHANGED
             return;
         }
 
@@ -35,7 +36,6 @@ public class AdminLoginServlet extends HttpServlet {
             request.setAttribute("success", "You have been logged out successfully.");
         }
 
-        // webapp/admin_login.jsp
         request.getRequestDispatcher("/admin_login.jsp").forward(request, response);
     }
 
@@ -46,6 +46,7 @@ public class AdminLoginServlet extends HttpServlet {
         String identifier = request.getParameter("identifier");
         String password   = request.getParameter("password");
 
+        // Basic blank check
         if (isBlank(identifier) || isBlank(password)) {
             request.setAttribute("error", "Please enter both Admin ID / Email and password.");
             request.setAttribute("identifier", identifier);
@@ -61,8 +62,11 @@ public class AdminLoginServlet extends HttpServlet {
             session.setAttribute("admin",      admin);
             session.setAttribute("adminId",    admin.getAdminId());
             session.setAttribute("adminName",  admin.getAdminName());
-            session.setMaxInactiveInterval(30 * 60);
-            response.sendRedirect(request.getContextPath() + "/dashboard");
+            session.setMaxInactiveInterval(30 * 60); // 30 minutes
+
+            // ✅ Redirect to admin_dashboard.jsp (CHANGED)
+            response.sendRedirect(request.getContextPath() + "/admin_dashboard.jsp");
+
         } else {
             request.setAttribute("error", "Invalid Admin ID / Email or password. Please try again.");
             request.setAttribute("identifier", identifier);

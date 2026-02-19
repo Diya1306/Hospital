@@ -97,6 +97,19 @@
         }
         .input-field input::placeholder { color: #aaa; font-weight: 500; }
 
+        /* Password wrapper with eye toggle */
+        .input-field.has-toggle {
+            grid-template-columns: 15% 1fr auto;
+            padding-right: 0.5rem;
+        }
+        .pwd-toggle {
+            background: none; border: none;
+            color: #aaa; cursor: pointer;
+            font-size: 1rem; line-height: 50px;
+            padding: 0 6px; transition: color 0.2s;
+        }
+        .pwd-toggle:hover { color: #d32f2f; }
+
         .btn {
             width: 160px;
             background: linear-gradient(135deg, #d32f2f, #ff6659);
@@ -112,6 +125,13 @@
             box-shadow: 0 15px 30px rgba(211, 47, 47, 0.3);
             background: linear-gradient(135deg, #c62828, #ff6659);
         }
+
+        /* Strength bar */
+        .strength-wrap { width: 100%; max-width: 400px; margin-top: -4px; margin-bottom: 4px; }
+        .strength-bar  { display: flex; gap: 4px; margin-bottom: 3px; }
+        .strength-segment { flex: 1; height: 3px; border-radius: 2px; background: #eee; transition: background 0.3s; }
+        .strength-label { font-size: 11px; color: #aaa; }
+
         .panels-container {
             position: absolute; height: 100%; width: 100%; top: 0; left: 0;
             display: grid; grid-template-columns: repeat(2, 1fr);
@@ -144,6 +164,15 @@
         }
         .btn.transparent:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
         .right-panel .image, .right-panel .content { transform: translateX(800px); }
+
+        /* Donor portal link */
+        .donor-link {
+            margin-top: 10px;
+            font-size: 0.82rem;
+            color: #7f8c8d;
+        }
+        .donor-link a { color: #d32f2f; font-weight: 600; text-decoration: none; }
+        .donor-link a:hover { text-decoration: underline; }
 
         /* ── Animations ── */
         .container.sign-up-mode:before { transform: translate(100%, -50%); right: 52%; }
@@ -182,12 +211,12 @@
     <div class="forms-container">
         <div class="signin-signup">
 
-            <%-- ══════════════════════════════════
+            <!-- ══════════════════════════════════
                  SIGN-IN FORM
-                 KEY FIX: action uses request.getContextPath()
-                 so it always resolves to the correct URL
-                 regardless of where the JSP is placed.
-            ══════════════════════════════════ --%>
+                 Posts to /admin-login → AdminLoginServlet
+                 → on success redirects to /dashboard → DashboardServlet
+                 → forwards to admin_dashboard.jsp
+            ══════════════════════════════════ -->
             <form action="<%= request.getContextPath() %>/admin-login"
                   method="POST"
                   class="sign-in-form"
@@ -196,18 +225,24 @@
                 <h2 class="title">Admin Sign In</h2>
                 <p class="subtitle">Access your admin dashboard</p>
 
-                <%-- Show error OR success message --%>
                 <% if (request.getAttribute("error") != null) { %>
-                <div class="error-message"><%= request.getAttribute("error") %></div>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= request.getAttribute("error") %>
+                </div>
                 <% } %>
                 <% if (request.getAttribute("success") != null) { %>
-                <div class="success-message"><%= request.getAttribute("success") %></div>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <%= request.getAttribute("success") %>
+                </div>
                 <% } %>
 
                 <div class="input-field">
                     <i class="fas fa-user-shield"></i>
                     <input type="text"
                            name="identifier"
+                           id="loginIdentifier"
                            placeholder="Admin ID or Email"
                            value="<%=
                                request.getAttribute("registeredEmail") != null
@@ -215,29 +250,44 @@
                                    : (request.getAttribute("identifier") != null
                                        ? request.getAttribute("identifier") : "")
                            %>"
+                           autocomplete="username"
                            required />
                 </div>
 
-                <div class="input-field">
+                <div class="input-field has-toggle">
                     <i class="fas fa-lock"></i>
-                    <input type="password" name="password" placeholder="Password" required />
+                    <input type="password"
+                           name="password"
+                           id="loginPassword"
+                           placeholder="Password"
+                           autocomplete="current-password"
+                           required />
+                    <button type="button" class="pwd-toggle"
+                            onclick="togglePwd('loginPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
 
                 <button type="submit" class="btn">Admin Login</button>
 
-                <p style="color:#7f8c8d; margin-top:15px; font-size:0.85rem;">
+                <p style="color:#7f8c8d; margin-top:12px; font-size:0.85rem;">
                     Don't have an account?
                     <a href="#" id="switch-to-signup"
                        style="color:#d32f2f; font-weight:600; text-decoration:none;">
                         Admin Register
                     </a>
                 </p>
+
+                <p class="donor-link">
+                    Looking for the donor portal?
+                    <a href="<%= request.getContextPath() %>/donorLogin.jsp">Donor Login →</a>
+                </p>
             </form>
 
-            <%-- ══════════════════════════════════
+            <!-- ══════════════════════════════════
                  SIGN-UP FORM
-                 KEY FIX: same contextPath fix here
-            ══════════════════════════════════ --%>
+                 Posts to /admin-register → AdminRegisterServlet
+            ══════════════════════════════════ -->
             <form action="<%= request.getContextPath() %>/admin-register"
                   method="POST"
                   class="sign-up-form"
@@ -247,7 +297,10 @@
                 <p class="subtitle">Create a new admin account</p>
 
                 <% if (request.getAttribute("error") != null && request.getAttribute("success") == null) { %>
-                <div class="error-message"><%= request.getAttribute("error") %></div>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <%= request.getAttribute("error") %>
+                </div>
                 <% } %>
 
                 <div class="input-field">
@@ -281,25 +334,55 @@
                     <i class="fas fa-phone"></i>
                     <input type="tel"
                            name="phone"
+                           id="regPhone"
                            placeholder="Phone Number (10 digits)"
                            value="<%= request.getAttribute("phone") != null ? request.getAttribute("phone") : "" %>"
                            pattern="\d{10}"
+                           maxlength="10"
                            required />
                 </div>
 
-                <div class="input-field">
+                <div class="input-field has-toggle">
                     <i class="fas fa-lock"></i>
-                    <input type="password" name="password" placeholder="Create Password (min 6 chars)" required />
+                    <input type="password"
+                           name="password"
+                           id="regPassword"
+                           placeholder="Create Password (min 6 chars)"
+                           oninput="checkStrength(this.value)"
+                           required />
+                    <button type="button" class="pwd-toggle"
+                            onclick="togglePwd('regPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
 
-                <div class="input-field">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" name="confirmPassword" placeholder="Confirm Password" required />
+                <!-- Password strength indicator -->
+                <div class="strength-wrap">
+                    <div class="strength-bar">
+                        <div class="strength-segment" id="s1"></div>
+                        <div class="strength-segment" id="s2"></div>
+                        <div class="strength-segment" id="s3"></div>
+                        <div class="strength-segment" id="s4"></div>
+                    </div>
+                    <span class="strength-label" id="strengthLabel"></span>
                 </div>
 
-                <button type="submit" class="btn">Create Admin Account</button>
+                <div class="input-field has-toggle">
+                    <i class="fas fa-lock"></i>
+                    <input type="password"
+                           name="confirmPassword"
+                           id="confirmPassword"
+                           placeholder="Confirm Password"
+                           required />
+                    <button type="button" class="pwd-toggle"
+                            onclick="togglePwd('confirmPassword', this)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
 
-                <p style="color:#7f8c8d; margin-top:15px; font-size:0.85rem;">
+                <button type="submit" class="btn">Create Account</button>
+
+                <p style="color:#7f8c8d; margin-top:12px; font-size:0.85rem;">
                     Already have an account?
                     <a href="#" id="switch-to-signin"
                        style="color:#d32f2f; font-weight:600; text-decoration:none;">
@@ -307,6 +390,7 @@
                     </a>
                 </p>
             </form>
+
         </div>
     </div>
 
@@ -314,7 +398,7 @@
         <div class="panel left-panel">
             <div class="content">
                 <h3>New Admin?</h3>
-                <p>Register your admin account to manage the blood bank</p>
+                <p>Register your admin account to manage the blood bank system</p>
                 <button class="btn transparent" id="sign-up-btn" type="button">Admin Register</button>
             </div>
             <img src="https://cdn.pixabay.com/photo/2017/08/06/08/12/people-2590564_1280.png"
@@ -334,58 +418,110 @@
 </div>
 
 <script>
+    // ── Panel switching ────────────────────────────────────────────────────
     const container        = document.getElementById("mainContainer");
     const sign_up_btn      = document.getElementById("sign-up-btn");
     const sign_in_btn      = document.getElementById("sign-in-btn");
     const switch_to_signup = document.getElementById("switch-to-signup");
     const switch_to_signin = document.getElementById("switch-to-signin");
 
-    sign_up_btn     .addEventListener("click", () => container.classList.add("sign-up-mode"));
-    sign_in_btn     .addEventListener("click", () => container.classList.remove("sign-up-mode"));
-    switch_to_signup.addEventListener("click", e  => { e.preventDefault(); container.classList.add("sign-up-mode"); });
-    switch_to_signin.addEventListener("click", e  => { e.preventDefault(); container.classList.remove("sign-up-mode"); });
+    sign_up_btn    .addEventListener("click", () => container.classList.add("sign-up-mode"));
+    sign_in_btn    .addEventListener("click", () => container.classList.remove("sign-up-mode"));
+    switch_to_signup.addEventListener("click", e => { e.preventDefault(); container.classList.add("sign-up-mode"); });
+    switch_to_signin.addEventListener("click", e => { e.preventDefault(); container.classList.remove("sign-up-mode"); });
 
-    // ── Auto switch panel after successful registration ──────────────────
+    // ── Auto-switch to login after successful registration ─────────────────
     window.addEventListener("DOMContentLoaded", function () {
         <% if (Boolean.TRUE.equals(request.getAttribute("switchToSignIn"))) { %>
         container.classList.remove("sign-up-mode");
         <% if (request.getAttribute("registeredEmail") != null) { %>
-        var idField = document.querySelector('#sign-in-form input[name="identifier"]');
+        var idField = document.getElementById('loginIdentifier');
         if (idField) {
             idField.value = '<%= request.getAttribute("registeredEmail") %>';
-            document.querySelector('#sign-in-form input[name="password"]').focus();
+            document.getElementById('loginPassword').focus();
         }
         <% } %>
         <% } %>
+
+        <% if (request.getAttribute("showRegister") != null) { %>
+        container.classList.add("sign-up-mode");
+        <% } %>
     });
 
-    // ── Sign-Up client-side validation ──────────────────────────────────
+    // ── Password visibility toggle ─────────────────────────────────────────
+    function togglePwd(fieldId, btn) {
+        const field = document.getElementById(fieldId);
+        const icon  = btn.querySelector('i');
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    // ── Password strength indicator ────────────────────────────────────────
+    function checkStrength(val) {
+        let score = 0;
+        if (val.length >= 6)  score++;
+        if (val.length >= 10) score++;
+        if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+        if (/[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val)) score++;
+
+        const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#27ae60'];
+        const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+        ['s1','s2','s3','s4'].forEach((id, i) => {
+            document.getElementById(id).style.background =
+                i < score ? colors[score - 1] : '#eee';
+        });
+
+        const lbl = document.getElementById('strengthLabel');
+        if (val.length === 0) {
+            lbl.textContent = '';
+        } else {
+            lbl.textContent  = labels[score - 1] || 'Weak';
+            lbl.style.color  = colors[score - 1] || '#e74c3c';
+        }
+    }
+
+    // ── Sign-Up validation ─────────────────────────────────────────────────
     document.getElementById("sign-up-form").addEventListener("submit", function (e) {
-        const adminName       = this.querySelector('input[name="adminName"]').value.trim();
-        const phone           = this.querySelector('input[name="phone"]').value.trim();
-        const password        = this.querySelector('input[name="password"]').value;
-        const confirmPassword = this.querySelector('input[name="confirmPassword"]').value;
+        const adminName       = this.querySelector('[name="adminName"]').value.trim();
+        const phone           = this.querySelector('[name="phone"]').value.trim();
+        const password        = this.querySelector('[name="password"]').value;
+        const confirmPassword = this.querySelector('[name="confirmPassword"]').value;
 
-        if (!adminName)                        { alert("Admin Name is required!");                    e.preventDefault(); return; }
-        if (!/^\d{10}$/.test(phone))           { alert("Phone must be exactly 10 digits!");           e.preventDefault(); return; }
-        if (password.length < 6)               { alert("Password must be at least 6 characters!");    e.preventDefault(); return; }
-        if (password !== confirmPassword)      { alert("Passwords do not match!");                    e.preventDefault(); return; }
+        if (!adminName)                   { alert("Admin Name is required!");                 e.preventDefault(); return; }
+        if (!/^\d{10}$/.test(phone))      { alert("Phone must be exactly 10 digits!");        e.preventDefault(); return; }
+        if (password.length < 6)          { alert("Password must be at least 6 characters!"); e.preventDefault(); return; }
+        if (password !== confirmPassword) { alert("Passwords do not match!");                 e.preventDefault(); return; }
     });
 
-    // ── Sign-In client-side validation ──────────────────────────────────
+    // ── Sign-In validation ─────────────────────────────────────────────────
     document.getElementById("sign-in-form").addEventListener("submit", function (e) {
-        const identifier = this.querySelector('input[name="identifier"]').value.trim();
-        const password   = this.querySelector('input[name="password"]').value.trim();
+        const identifier = this.querySelector('[name="identifier"]').value.trim();
+        const password   = this.querySelector('[name="password"]').value.trim();
         if (!identifier || !password) {
             alert("Please enter both Admin ID / Email and password!");
             e.preventDefault();
         }
     });
 
-    // ── Input border highlight ───────────────────────────────────────────
+    // ── Phone: digits only ─────────────────────────────────────────────────
+    document.getElementById('regPhone').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+    });
+
+    // ── Input focus border highlight ───────────────────────────────────────
     document.querySelectorAll(".input-field input").forEach(function (input) {
-        input.addEventListener("focus", function () { this.parentElement.style.borderColor = "#d32f2f"; });
-        input.addEventListener("blur",  function () { this.parentElement.style.borderColor = "transparent"; });
+        input.addEventListener("focus", function () {
+            this.closest('.input-field').style.borderColor = "#d32f2f";
+        });
+        input.addEventListener("blur", function () {
+            this.closest('.input-field').style.borderColor = "transparent";
+        });
     });
 </script>
 </body>

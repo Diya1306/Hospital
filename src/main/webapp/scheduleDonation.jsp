@@ -13,12 +13,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Schedule Donation | Blood Donor System</title>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ===== SIMPLE, BEGINNER-FRIENDLY STYLES ===== */
         * {
             margin: 0;
             padding: 0;
@@ -32,13 +29,11 @@
             padding: 20px;
         }
 
-        /* Main Container */
         .container {
             max-width: 900px;
             margin: 0 auto;
         }
 
-        /* Header with back button */
         .header {
             display: flex;
             justify-content: space-between;
@@ -66,7 +61,6 @@
             transform: translateX(-5px);
         }
 
-        /* Main Card */
         .schedule-card {
             background: white;
             border-radius: 30px;
@@ -76,17 +70,10 @@
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Header Section with Blood Icon */
         .card-header {
             background: linear-gradient(135deg, #c00, #8b0000);
             color: white;
@@ -129,7 +116,6 @@
             opacity: 0.9;
         }
 
-        /* Donor Info Badge */
         .donor-badge {
             background: rgba(255, 255, 255, 0.15);
             padding: 15px 25px;
@@ -141,27 +127,11 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .donor-badge img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
+        .donor-badge span { font-weight: 500; }
+        .donor-badge small { opacity: 0.8; font-size: 12px; }
 
-        .donor-badge span {
-            font-weight: 500;
-        }
+        .form-section { padding: 40px; }
 
-        .donor-badge small {
-            opacity: 0.8;
-            font-size: 12px;
-        }
-
-        /* Form Section */
-        .form-section {
-            padding: 40px;
-        }
-
-        /* Eligibility Alert */
         .eligibility-alert {
             background: linear-gradient(135deg, #fff3cd, #ffe69b);
             color: #856404;
@@ -172,41 +142,21 @@
             align-items: center;
             gap: 15px;
             border-left: 5px solid #ffc107;
-            animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
+        .eligibility-alert i { font-size: 30px; }
+        .eligibility-alert h3 { margin-bottom: 5px; }
+        .eligibility-alert p { font-size: 14px; }
 
-        .eligibility-alert i {
-            font-size: 30px;
-        }
-
-        .eligibility-alert h3 {
-            margin-bottom: 5px;
-        }
-
-        .eligibility-alert p {
-            font-size: 14px;
-        }
-
-        /* Form Grid */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 25px;
         }
 
-        .full-width {
-            grid-column: span 2;
-        }
+        .full-width { grid-column: span 2; }
 
-        .form-group {
-            margin-bottom: 5px;
-        }
+        .form-group { margin-bottom: 5px; }
 
         label {
             display: block;
@@ -222,10 +172,7 @@
             width: 18px;
         }
 
-        /* Input Styling */
-        .input-wrapper {
-            position: relative;
-        }
+        .input-wrapper { position: relative; }
 
         .input-wrapper i {
             position: absolute;
@@ -236,6 +183,11 @@
             font-size: 16px;
         }
 
+        .input-wrapper.textarea-wrapper i {
+            top: 20px;
+            transform: none;
+        }
+
         input, select, textarea {
             width: 100%;
             padding: 14px 15px 14px 45px;
@@ -244,10 +196,10 @@
             font-size: 15px;
             transition: all 0.3s;
             background: #f9f9f9;
+            color: #333;
         }
 
         textarea {
-            padding: 14px 15px 14px 45px;
             resize: vertical;
             min-height: 100px;
         }
@@ -259,7 +211,7 @@
             background: white;
         }
 
-        /* Time slots grid */
+        /* Time Slots */
         .time-slots {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -267,13 +219,9 @@
             margin-top: 10px;
         }
 
-        .time-slot {
-            position: relative;
-        }
+        .time-slot { position: relative; }
 
-        .time-slot input[type="radio"] {
-            display: none;
-        }
+        .time-slot input[type="radio"] { display: none; }
 
         .time-slot label {
             display: block;
@@ -297,7 +245,7 @@
             box-shadow: 0 5px 15px rgba(204, 0, 0, 0.3);
         }
 
-        /* Location cards */
+        /* Location Cards */
         .location-cards {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -305,13 +253,9 @@
             margin-top: 10px;
         }
 
-        .location-card {
-            position: relative;
-        }
+        .location-card { position: relative; }
 
-        .location-card input[type="radio"] {
-            display: none;
-        }
+        .location-card input[type="radio"] { display: none; }
 
         .location-card label {
             display: block;
@@ -330,23 +274,50 @@
             font-size: 24px;
             color: #c00;
             margin-bottom: 10px;
+            position: static;
+            transform: none;
         }
 
-        .location-card label h4 {
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .location-card label p {
-            font-size: 12px;
-            color: #666;
-        }
+        .location-card label h4 { margin-bottom: 5px; color: #333; }
+        .location-card label p { font-size: 12px; color: #666; }
 
         .location-card input[type="radio"]:checked + label {
             background: #fff0f0;
             border-color: #c00;
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(204, 0, 0, 0.2);
+        }
+
+        /* Units & Disease Select Styling */
+        .select-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 5px;
+        }
+
+        .unit-option, .disease-option {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 14px 15px 14px 45px;
+            width: 100%;
+            font-size: 15px;
+            transition: all 0.3s;
+            color: #333;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23c00' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+        }
+
+        .unit-option:focus, .disease-option:focus {
+            border-color: #c00;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(204, 0, 0, 0.1);
+            background-color: white;
         }
 
         /* Button Group */
@@ -412,34 +383,6 @@
             75% { transform: translateX(5px); }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .full-width {
-                grid-column: span 1;
-            }
-
-            .time-slots {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .location-cards {
-                grid-template-columns: 1fr;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .card-header {
-                padding: 30px;
-            }
-        }
-
-        /* Quick Info Box */
         .info-box {
             background: linear-gradient(135deg, #e3f2fd, #bbdefb);
             color: #1976d2;
@@ -452,40 +395,40 @@
             border-left: 5px solid #1976d2;
         }
 
-        .info-box i {
-            font-size: 30px;
-        }
+        .info-box i { font-size: 30px; }
+        .info-box h4 { margin-bottom: 5px; }
+        .info-box p { font-size: 13px; opacity: 0.9; }
 
-        .info-box h4 {
-            margin-bottom: 5px;
-        }
-
-        .info-box p {
-            font-size: 13px;
-            opacity: 0.9;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .select-group { grid-template-columns: 1fr; }
+            .time-slots { grid-template-columns: repeat(2, 1fr); }
+            .location-cards { grid-template-columns: 1fr; }
+            .button-group { flex-direction: column; }
+            .card-header { padding: 30px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- Header with back button -->
     <div class="header">
         <a href="donorDashboard.jsp" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>
 
-    <!-- Main Schedule Card -->
     <div class="schedule-card">
-        <!-- Header -->
+        <!-- Card Header -->
         <div class="card-header">
             <i class="fas fa-calendar-plus"></i>
             <h1>Schedule Your Donation</h1>
             <p>Choose a date and time that works best for you</p>
 
-            <!-- Donor Badge -->
             <div class="donor-badge">
-                <div style="background: white; color: #c00; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                <div style="background: white; color: #c00; width: 40px; height: 40px; border-radius: 50%;
+                            display: flex; align-items: center; justify-content: center; font-weight: bold;">
                     <%= donor.getFirstName().substring(0, 1).toUpperCase() %>
                 </div>
                 <div style="text-align: left;">
@@ -497,15 +440,15 @@
 
         <!-- Form Section -->
         <div class="form-section">
+
             <!-- Error Messages -->
             <% if (request.getParameter("error") != null) {
-                String error = request.getParameter("error");
-            %>
+                String error = request.getParameter("error"); %>
             <div class="error-message">
                 <i class="fas fa-exclamation-circle"></i>
-                <% if (error.equals("required")) { %>
+                <% if ("required".equals(error)) { %>
                 Please fill in all required fields.
-                <% } else if (error.equals("scheduling_failed")) { %>
+                <% } else if ("scheduling_failed".equals(error)) { %>
                 Scheduling failed. Please try again.
                 <% } else { %>
                 An error occurred. Please try again.
@@ -525,6 +468,7 @@
             <!-- Schedule Form -->
             <form action="ScheduleServlet" method="post" id="scheduleForm">
                 <div class="form-grid">
+
                     <!-- Date Selection -->
                     <div class="form-group full-width">
                         <label><i class="fas fa-calendar-alt"></i> Select Donation Date *</label>
@@ -575,6 +519,36 @@
                         </div>
                     </div>
 
+                    <!-- Units & Disease - Side by Side -->
+                    <div class="form-group">
+                        <label><i class="fas fa-flask"></i> Units to Donate *</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-tint"></i>
+                            <select name="units" id="units" class="unit-option" required>
+                                <option value="" disabled selected>Select units</option>
+                                <option value="1">1 Unit (450ml)</option>
+                                <option value="2">2 Units (900ml)</option>
+                                <option value="3">3 Units (1350ml)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-heartbeat"></i> Medical Condition *</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-notes-medical"></i>
+                            <select name="disease" id="disease" class="disease-option" required>
+                                <option value="" disabled selected>Select condition</option>
+                                <option value="None">None / Healthy</option>
+                                <option value="Diabetes">Diabetes (Controlled)</option>
+                                <option value="Hypertension">Hypertension (Controlled)</option>
+                                <option value="Asthma">Asthma (Mild)</option>
+                                <option value="Anemia">Anemia (Under treatment)</option>
+                                <option value="Other">Other (Specify in notes)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Location Selection -->
                     <div class="form-group full-width">
                         <label><i class="fas fa-map-marker-alt"></i> Choose Donation Center *</label>
@@ -621,23 +595,24 @@
                     <!-- Additional Notes -->
                     <div class="form-group full-width">
                         <label><i class="fas fa-sticky-note"></i> Additional Notes (Optional)</label>
-                        <div class="input-wrapper">
+                        <div class="input-wrapper textarea-wrapper">
                             <i class="fas fa-pen"></i>
-                            <textarea name="notes" id="notes" placeholder="Any special requirements, questions, or information you'd like us to know?"></textarea>
+                            <textarea name="notes" id="notes"
+                                      placeholder="Any special requirements, questions, or information you'd like us to know?"></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Info Box - Reminders -->
+                <!-- Info Box -->
                 <div class="info-box">
                     <i class="fas fa-info-circle"></i>
                     <div>
                         <h4><i class="fas fa-clipboard-list"></i> Before You Donate:</h4>
-                        <p>✓ Get a good night's sleep • ✓ Eat a healthy meal • ✓ Drink plenty of water • ✓ Bring your ID</p>
+                        <p>✓ Get a good night's sleep &nbsp;•&nbsp; ✓ Eat a healthy meal &nbsp;•&nbsp; ✓ Drink plenty of water &nbsp;•&nbsp; ✓ Bring your ID</p>
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
+                <!-- Buttons -->
                 <div class="button-group">
                     <button type="button" class="btn btn-secondary" onclick="window.location.href='donorDashboard.jsp'">
                         <i class="fas fa-times"></i> Cancel
@@ -648,7 +623,7 @@
                 </div>
             </form>
 
-            <!-- Quick Schedule Tips -->
+            <!-- Quick Tips -->
             <div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 15px;">
                 <h4 style="color: #c00; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-lightbulb"></i> Quick Tips
@@ -672,51 +647,22 @@
     </div>
 </div>
 
-<!-- Simple JavaScript -->
 <script>
-    // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('appointmentDate').setAttribute('min', today);
 
-    // Add animation to selected time slot
-    const timeSlots = document.querySelectorAll('.time-slot input');
-    timeSlots.forEach(slot => {
-        slot.addEventListener('change', function() {
-            timeSlots.forEach(s => {
-                s.parentElement.classList.remove('selected');
-            });
-            if(this.checked) {
-                this.parentElement.classList.add('selected');
-            }
-        });
-    });
-
-    // Add animation to selected location
-    const locations = document.querySelectorAll('.location-card input');
-    locations.forEach(loc => {
-        loc.addEventListener('change', function() {
-            locations.forEach(l => {
-                l.parentElement.classList.remove('selected');
-            });
-            if(this.checked) {
-                this.parentElement.classList.add('selected');
-            }
-        });
-    });
-
-    // Form validation
     document.getElementById('scheduleForm').addEventListener('submit', function(e) {
         const date = document.getElementById('appointmentDate').value;
         const time = document.querySelector('input[name="appointmentTime"]:checked');
         const location = document.querySelector('input[name="location"]:checked');
+        const units = document.getElementById('units').value;
+        const disease = document.getElementById('disease').value;
 
-        if(!date || !time || !location) {
+        if (!date || !time || !location || !units || !disease) {
             e.preventDefault();
-            alert('Please select date, time and location for your donation.');
+            alert('Please fill in all required fields including date, time, location, units and medical condition.');
         }
     });
 </script>
 </body>
-
 </html>
-

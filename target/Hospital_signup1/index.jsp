@@ -588,7 +588,7 @@
             </div>
             <h3>Administrator</h3>
             <p>Hospital staff and system administrators. Login to manage donors, appointments, and blood inventory.</p>
-            <a href="adminLogin.jsp" class="card-btn btn-admin">
+            <a href="admin_login.jsp" class="card-btn btn-admin">
                 <i class="fas fa-lock"></i> Admin Login
             </a>
             <div style="margin-top: 15px; font-size: 0.9rem; color: #c00;">
