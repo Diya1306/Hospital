@@ -1,7 +1,6 @@
 package com.Donor_registration.database;
 
 import com.Donor_registration.model.Appointment;
-import com.Donor_registration.model.Donor;
 import java.sql.*;
 import java.util.*;
 
@@ -127,6 +126,44 @@ public class AppointmentDAO {
             DatabaseConnection.closeConnection(conn);
         }
         return results;
+    }
+
+    // Get single appointment by ID with donor info (used for inventory insertion on approval)
+    public Map<String, Object> getAppointmentById(int appointmentId) {
+        String sql = "SELECT a.id, a.units, a.location, a.admin_status, " +
+                "d.id AS donor_id, d.first_name, d.last_name, d.blood_type " +
+                "FROM appointments a " +
+                "JOIN donors d ON a.donor_id = d.id " +
+                "WHERE a.id = ?";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DatabaseConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, appointmentId);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("donorId",   rs.getInt("donor_id"));
+                map.put("firstName", rs.getString("first_name"));
+                map.put("lastName",  rs.getString("last_name"));
+                map.put("bloodType", rs.getString("blood_type"));
+                map.put("units",     rs.getInt("units"));
+                map.put("location",  rs.getString("location"));
+                return map;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            closeResultSet(rs);
+            closeStatement(pstmt);
+            DatabaseConnection.closeConnection(conn);
+        }
+        return null;
     }
 
     // Update admin_status and appointment status

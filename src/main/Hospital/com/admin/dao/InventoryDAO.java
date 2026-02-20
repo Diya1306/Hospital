@@ -3,18 +3,20 @@ import com.Donor_registration.database.DatabaseConnection;
 import com.admin.model.BloodInventory;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class InventoryDAO {
 
-    // ── Add new blood unit ────────────────────────────────────────────────
+    // ── Add new blood unit (returns generated unit_id) ───────────────────
     public boolean addBloodUnit(BloodInventory bloodUnit) {
         String sql = "INSERT INTO blood_inventory (admin_id, blood_group, quantity, donation_date, " +
                 "expiry_date, donor_id, donor_name, donor_blood_group, current_status, " +
                 "testing_status, storage_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1,    bloodUnit.getAdminId());
             pstmt.setString(2, bloodUnit.getBloodGroup());
@@ -25,13 +27,66 @@ public class InventoryDAO {
             pstmt.setString(7, bloodUnit.getDonorName());
             pstmt.setString(8, bloodUnit.getDonorBloodGroup());
             pstmt.setString(9, bloodUnit.getCurrentStatus());
-            pstmt.setString(10,bloodUnit.getTestingStatus());
-            pstmt.setString(11,bloodUnit.getStorageLocation());
+            pstmt.setString(10, bloodUnit.getTestingStatus());
+            pstmt.setString(11, bloodUnit.getStorageLocation());
 
-            return pstmt.executeUpdate() > 0;
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                // Get the generated unit_id and set it back to the object
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        bloodUnit.setUnitId(generatedKeys.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
 
         } catch (SQLException e) {
             System.err.println("Error adding blood unit: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // ── Add multiple blood units (batch insert) ──────────────────────────
+    public boolean addBloodUnits(List<BloodInventory> bloodUnits) {
+        String sql = "INSERT INTO blood_inventory (admin_id, blood_group, quantity, donation_date, " +
+                "expiry_date, donor_id, donor_name, donor_blood_group, current_status, " +
+                "testing_status, storage_location) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            conn.setAutoCommit(false);
+
+            for (BloodInventory bloodUnit : bloodUnits) {
+                pstmt.setInt(1,    bloodUnit.getAdminId());
+                pstmt.setString(2, bloodUnit.getBloodGroup());
+                pstmt.setInt(3,    bloodUnit.getQuantity());
+                pstmt.setDate(4,   bloodUnit.getDonationDate());
+                pstmt.setDate(5,   bloodUnit.getExpiryDate());
+                pstmt.setInt(6,    bloodUnit.getDonorId());
+                pstmt.setString(7, bloodUnit.getDonorName());
+                pstmt.setString(8, bloodUnit.getDonorBloodGroup());
+                pstmt.setString(9, bloodUnit.getCurrentStatus());
+                pstmt.setString(10, bloodUnit.getTestingStatus());
+                pstmt.setString(11, bloodUnit.getStorageLocation());
+                pstmt.addBatch();
+            }
+
+            int[] results = pstmt.executeBatch();
+            conn.commit();
+
+            // Check if all were successful
+            for (int result : results) {
+                if (result <= 0) return false;
+            }
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Error adding blood units in batch: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -54,6 +109,37 @@ public class InventoryDAO {
             e.printStackTrace();
         }
         return inventory;
+    }
+
+    // ── Summary grouped by blood group as Map (for easy dashboard use) ───
+    public Map<String, Integer> getBloodGroupSummaryMap(int adminId) {
+        Map<String, Integer> summary = new HashMap<>();
+        String sql = "SELECT blood_group, COALESCE(SUM(quantity), 0) AS total_quantity " +
+                "FROM blood_inventory " +
+                "WHERE admin_id = ? AND current_status = 'Available' " +
+                "  AND testing_status = 'Passed' AND expiry_date > CURDATE() " +
+                "GROUP BY blood_group";
+
+        // Initialize all blood groups with 0
+        String[] bloodGroups = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"};
+        for (String bg : bloodGroups) {
+            summary.put(bg, 0);
+        }
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, adminId);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                summary.put(rs.getString("blood_group"), rs.getInt("total_quantity"));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error fetching inventory summary map: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return summary;
     }
 
     // ── Summary grouped by blood group (available + passed + not expired) ─
@@ -82,6 +168,28 @@ public class InventoryDAO {
             e.printStackTrace();
         }
         return summary;
+    }
+
+    // ── Get quantity for specific blood group ────────────────────────────
+    public int getQuantityByBloodGroup(int adminId, String bloodGroup) {
+        String sql = "SELECT COALESCE(SUM(quantity), 0) AS total FROM blood_inventory " +
+                "WHERE admin_id = ? AND blood_group = ? " +
+                "AND current_status = 'Available' AND testing_status = 'Passed' " +
+                "AND expiry_date > CURDATE()";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, adminId);
+            pstmt.setString(2, bloodGroup);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) return rs.getInt("total");
+
+        } catch (SQLException e) {
+            System.err.println("Error getting quantity by blood group: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     // ── Total available + passed + not-expired units ──────────────────────
@@ -264,6 +372,35 @@ public class InventoryDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    // ── Get inventory statistics for dashboard ───────────────────────────
+    public Map<String, Object> getInventoryStats(int adminId) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUnits", getTotalUnits(adminId));
+        stats.put("criticalCount", getCriticalLevelsCount(adminId));
+        stats.put("lowCount", getLowStockCount(adminId));
+        stats.put("expiringSoon", getExpiringSoonCount(adminId));
+        stats.put("pendingTests", getPendingTestsCount(adminId));
+        stats.put("bloodGroupSummary", getBloodGroupSummaryMap(adminId));
+        return stats;
+    }
+
+    // ── Delete expired units (cleanup job) ───────────────────────────────
+    public int deleteExpiredUnits() {
+        String sql = "UPDATE blood_inventory SET current_status = 'Expired' " +
+                "WHERE expiry_date < CURDATE() AND current_status = 'Available'";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            return pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error deleting expired units: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     // ── Private helper: map ResultSet row → BloodInventory ───────────────

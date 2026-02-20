@@ -19,6 +19,19 @@
         else if ("Rejected".equals(as)) totalRejected++;
     }
 %>
+<% if(request.getParameter("success") != null) { %>
+<div style="background: var(--light-green); color: var(--green); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+    <i class='bx bx-check-circle' style="font-size: 24px;"></i>
+    <span><%= request.getParameter("success") %></span>
+</div>
+<% } %>
+
+<% if(request.getParameter("error") != null) { %>
+<div style="background: var(--light-primary); color: var(--primary); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+    <i class='bx bx-error-circle' style="font-size: 24px;"></i>
+    <span><%= request.getParameter("error") %></span>
+</div>
+<% } %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -410,7 +423,7 @@
 <nav class="navbar">
     <h1><i class="fas fa-tint"></i> Admin — Donation Requests</h1>
     <div class="nav-right">
-        <a href="adminDashboard.jsp" class="back-btn">
+        <a href="admin_dashboard.jsp" class="back-btn">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
     </div>

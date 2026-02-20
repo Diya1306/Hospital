@@ -556,9 +556,9 @@
             <div class="card-icon donor-register-icon">
                 <i class="fas fa-user-plus"></i>
             </div>
-            <h3>New Donor?</h3>
+            <h3>Patient</h3>
             <p>Join our family of heroes! Register as a blood donor and start your journey to save lives. It only takes 2 minutes.</p>
-            <a href="donorRegistration.jsp" class="card-btn btn-register">
+            <a href="patientLogin.jsp" class="card-btn btn-register">
                 <i class="fas fa-clipboard-list"></i> Register Now
             </a>
             <div style="margin-top: 15px; font-size: 0.9rem; color: #28a745;">
