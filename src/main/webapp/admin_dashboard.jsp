@@ -273,7 +273,6 @@
                 <i class='bx bxs-inbox'></i><span class="text">Inventory</span>
             </a>
         </li>
-        <!-- Donation Requests Link - ADDED HERE after Inventory -->
         <li>
             <a href="<%= request.getContextPath() %>/adminDonationRequests.jsp">
                 <i class='bx bxs-calendar-check'></i><span class="text">Donation Requests</span>
@@ -285,28 +284,13 @@
             </a>
         </li>
         <li>
-            <a href="#">
+            <a href="<%= request.getContextPath() %>/patientBloodRequests.jsp">
+                <i class='bx bxs-heart'></i><span class="text">Blood Request (Patient)</span>
+            </a>
+        </li>
+        <li>
+            <a href="<%= request.getContextPath() %>/donors.jsp">
                 <i class='bx bxs-user-plus'></i><span class="text">Donors</span>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <i class='bx bxs-heart'></i><span class="text">Blood Requests</span>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <i class='bx bxs-flask'></i><span class="text">Testing Lab</span>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <i class='bx bxs-calendar-event'></i><span class="text">Blood Drives</span>
-            </a>
-        </li>
-        <li>
-            <a href="#">
-                <i class='bx bxs-report'></i><span class="text">Reports</span>
             </a>
         </li>
     </ul>

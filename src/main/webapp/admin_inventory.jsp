@@ -182,14 +182,29 @@
                 <i class='bx bxs-inbox'></i><span class="text">Inventory</span>
             </a>
         </li>
-        <li><a href="#"><i class='bx bxs-user-plus'></i><span class="text">Donors</span></a></li>
-        <li><a href="#"><i class='bx bxs-heart'></i><span class="text">Requests</span></a></li>
-        <li><a href="#"><i class='bx bxs-flask'></i><span class="text">Testing Lab</span></a></li>
-        <li><a href="#"><i class='bx bxs-calendar-event'></i><span class="text">Blood Drives</span></a></li>
-        <li><a href="#"><i class='bx bxs-report'></i><span class="text">Reports</span></a></li>
+        <li>
+            <a href="<%= request.getContextPath() %>/adminDonationRequests.jsp">
+                <i class='bx bxs-calendar-check'></i><span class="text">Donation Requests</span>
+                <% if (false) { %><span class="badge">0</span><% } %>
+            </a>
+        </li>
+        <li>
+            <a href="<%= request.getContextPath() %>/patientBloodRequests.jsp">
+                <i class='bx bxs-heart'></i><span class="text">Blood Request (Patient)</span>
+            </a>
+        </li>
+        <li>
+            <a href="<%= request.getContextPath() %>/donors.jsp">
+                <i class='bx bxs-user-plus'></i><span class="text">Donors</span>
+            </a>
+        </li>
     </ul>
     <ul class="side-menu bottom">
-        <li><a href="#"><i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span></a></li>
+        <li>
+            <a href="#">
+                <i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span>
+            </a>
+        </li>
         <li>
             <a href="<%= request.getContextPath() %>/admin-logout" class="logout">
                 <i class='bx bx-power-off bx-burst-hover'></i><span class="text">Admin Logout</span>
