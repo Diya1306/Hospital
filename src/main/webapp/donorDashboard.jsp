@@ -129,6 +129,143 @@
         .tip-item { display:flex; align-items:center; gap:8px; font-size:13px; color:#555; }
         .tip-item i { color:var(--green); }
 
+        /* MODAL STYLES - Added for medical conditions popup */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s;
+        }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+
+        .close-btn {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #ffd700;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .detail-box {
+            background: #fff5f5;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .detail-box p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #f0f0f0;
+            color: #666;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            text-align: right;
+            border-top: 1px solid #eee;
+        }
+
+        .modal-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(230,57,70,0.3);
+        }
+
+        .clickable-row {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .clickable-row:hover {
+            background: var(--light-primary) !important;
+            transform: translateX(5px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width:768px) {
             .stats-grid { grid-template-columns:repeat(2,1fr); }
             .info-grid { grid-template-columns:1fr; }
@@ -281,7 +418,7 @@
             </div>
         </div>
 
-        <!-- Health Info -->
+        <!-- Health Info with Clickable Medical Conditions -->
         <div class="info-section">
             <div class="section-header">
                 <i class="fas fa-heartbeat"></i>
@@ -315,24 +452,62 @@
                     <% } %>
                 </div>
                 <div>
-                    <div class="info-item">
-                        <div class="info-label"><i class="fas fa-notes-medical"></i> Medical Conditions</div>
+                    <!-- Medical Conditions - Clickable Row -->
+                    <div class="info-item clickable-row" id="medicalClickable" style="background-color: var(--light-primary); border-radius: 8px; padding: 12px; border: 1px solid var(--primary); margin-bottom: 10px;">
+                        <div class="info-label"><i class="fas fa-notes-medical" style="color:var(--primary);"></i> Medical Conditions</div>
                         <div class="info-value">
                             <% if(donor.isMedicalConditions()) { %>
-                            <span style="color:var(--primary);font-weight:600;"><i class="fas fa-exclamation-triangle"></i> Yes</span>
+                            <span style="color:var(--primary);font-weight:700;">
+                                <i class="fas fa-exclamation-triangle"></i> YES
+                                <i class="fas fa-info-circle" style="margin-left:8px; font-size:12px;"></i>
+                                <span style="font-size:10px; color:#666; display:block;">Click to view details</span>
+                            </span>
                             <% } else { %>
                             <span style="color:var(--green);font-weight:600;"><i class="fas fa-check-circle"></i> None</span>
                             <% } %>
                         </div>
                     </div>
+
+                    <!-- Details (only shown if medical conditions exist) -->
                     <% if (donor.getConditionsDetails() != null && !donor.getConditionsDetails().isEmpty()) { %>
-                    <div class="info-item">
+                    <div class="info-item" style="border-bottom: none;">
                         <div class="info-label"><i class="fas fa-pen"></i> Details</div>
                         <div class="info-value"><%= donor.getConditionsDetails() %></div>
                     </div>
                     <% } %>
                 </div>
             </div>
+
+            <!-- Medical Conditions Modal -->
+            <% if (donor.getConditionsDetails() != null && !donor.getConditionsDetails().isEmpty()) { %>
+            <div id="medicalModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-notes-medical"></i> Medical Conditions Details</h3>
+                        <span class="close-btn" onclick="closeMedicalModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-box">
+                            <p>
+                                <i class="fas fa-stethoscope" style="color:var(--primary); margin-right:10px;"></i>
+                                <%= donor.getConditionsDetails() %>
+                            </p>
+                        </div>
+                        <div class="badge-container">
+                            <span class="badge">
+                                <i class="fas fa-clock"></i> <%= new java.text.SimpleDateFormat("MMM dd, yyyy").format(new java.util.Date()) %>
+                            </span>
+                            <span class="badge">
+                                <i class="fas fa-user-md"></i> Self-reported
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="modal-btn" onclick="closeMedicalModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+            <% } %>
 
             <div class="alert info" style="margin-top:20px;">
                 <i class='bx bx-info-circle'></i>
@@ -361,10 +536,48 @@
     </main>
 </section>
 
+<!-- JavaScript for Medical Conditions Popup -->
 <script>
+    // Function to show medical details modal
+    function showMedicalDetails() {
+        var modal = document.getElementById('medicalModal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    }
+
+    // Function to close modal
+    function closeMedicalModal() {
+        var modal = document.getElementById('medicalModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        var modal = document.getElementById('medicalModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Add click event to the medical conditions row
+    document.addEventListener('DOMContentLoaded', function() {
+        var medicalRow = document.getElementById('medicalClickable');
+        if (medicalRow) {
+            medicalRow.onclick = function() {
+                showMedicalDetails();
+            };
+        }
+    });
+
+    // Sidebar toggle
     const menuBar = document.querySelector('#content nav .bx.bx-menu');
     const sidebar = document.getElementById('sidebar');
-    menuBar.addEventListener('click', () => sidebar.classList.toggle('hide'));
+    if (menuBar) {
+        menuBar.addEventListener('click', () => sidebar.classList.toggle('hide'));
+    }
 </script>
 </body>
 </html>
