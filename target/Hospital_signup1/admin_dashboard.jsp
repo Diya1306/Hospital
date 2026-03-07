@@ -13,7 +13,6 @@
     Admin admin = (Admin) adminSession.getAttribute("admin");
     String adminName = admin != null ? admin.getAdminName() : "Admin";
 
-    // ── Stats set by DashboardServlet ──────────────────────────────────────
     Integer totalUnits      = (Integer) request.getAttribute("totalUnits");
     Integer activeDonors    = (Integer) request.getAttribute("activeDonors");
     Integer pendingRequests = (Integer) request.getAttribute("pendingRequests");
@@ -28,12 +27,10 @@
     if (criticalCount   == null) criticalCount   = 0;
     if (lowCount        == null) lowCount        = 0;
 
-    // ── Live inventory summary (grouped by blood group) ────────────────────
     @SuppressWarnings("unchecked")
     List<BloodInventory> inventory = (List<BloodInventory>) request.getAttribute("inventory");
     if (inventory == null) inventory = new ArrayList<>();
 
-    // Build blood group → qty map from live data
     int aPlus = 0, aMinus = 0, bPlus = 0, bMinus = 0;
     int abPlus = 0, abMinus = 0, oPlus = 0, oMinus = 0;
 
@@ -147,7 +144,6 @@
         #content main::-webkit-scrollbar { width:8px; }
         #content main::-webkit-scrollbar-track { background:var(--grey); }
         #content main::-webkit-scrollbar-thumb { background:var(--dark-grey); border-radius:4px; }
-
         #content main .head-title { display:flex; align-items:center; justify-content:space-between; grid-gap:16px; flex-wrap:wrap; }
         #content main .head-title .left h1 { font-size:32px; font-weight:800; margin-bottom:8px; color:var(--dark); }
         #content main .head-title .left .breadcrumb { display:flex; align-items:center; grid-gap:12px; }
@@ -216,6 +212,8 @@
         .refresh-indicator .dot { width:8px; height:8px; background:var(--green); border-radius:50%; animation:blink 2s infinite; }
         @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
+        .side-menu li a .badge { background:var(--primary); color:white; margin-left:auto; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; min-width:20px; text-align:center; }
+
         @media screen and (max-width:768px) {
             #sidebar{width:70px;} #sidebar.show{width:240px;}
             #content{width:calc(100% - 70px); left:70px;}
@@ -227,35 +225,9 @@
             #content main .box-info{grid-template-columns:1fr;}
             .blood-group-grid{grid-template-columns:1fr;}
         }
-        /* Badge styling for menu items */
-        .side-menu li a .badge {
-            background: var(--primary);
-            color: white;
-            margin-left: auto;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            min-width: 20px;
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* Active state for Donation Requests */
-        .side-menu li.active a {
-            background: var(--light-primary);
-            color: var(--primary);
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
-
 
 <!-- SIDEBAR -->
 <section id="sidebar">
@@ -277,14 +249,13 @@
             <a href="<%= request.getContextPath() %>/adminDonationRequests.jsp">
                 <i class='bx bxs-calendar-check'></i><span class="text">Donation Requests</span>
                 <% if (pendingRequests > 0) { %>
-                <span class="badge" style="background:var(--primary); color:white; margin-left:auto; padding:2px 8px; border-radius:12px; font-size:11px;">
-                    <%= pendingRequests %>
-                </span>
+                <span class="badge"><%= pendingRequests %></span>
                 <% } %>
             </a>
         </li>
+        <%-- ✅ CHANGED: was /patientBloodRequests.jsp — now hits the servlet so data loads --%>
         <li>
-            <a href="<%= request.getContextPath() %>/patientBloodRequests.jsp">
+            <a href="<%= request.getContextPath() %>/patientBloodRequests">
                 <i class='bx bxs-heart'></i><span class="text">Blood Request (Patient)</span>
             </a>
         </li>
@@ -296,9 +267,7 @@
     </ul>
     <ul class="side-menu bottom">
         <li>
-            <a href="#">
-                <i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span>
-            </a>
+            <a href="#"><i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span></a>
         </li>
         <li>
             <a href="<%= request.getContextPath() %>/admin-logout" class="logout">
@@ -341,7 +310,7 @@
                 <li class="warning"><i class='bx bxs-calendar-exclamation'></i> <%= expiringSoon %> units expiring soon</li>
                 <% } %>
                 <% if (pendingRequests > 0) { %>
-                <li class="urgent"><i class='bx bxs-plus-circle'></i> <%= pendingRequests %> pending requests</li>
+                <li class="urgent"><i class='bx bxs-plus-circle'></i> <%= pendingRequests %> pending patient requests</li>
                 <% } %>
                 <% if (criticalCount == 0 && lowCount == 0 && expiringSoon == 0 && pendingRequests == 0) { %>
                 <li class="info"><i class='bx bxs-check-circle'></i> All systems normal</li>
@@ -434,7 +403,7 @@
                             int qty = Integer.parseInt(g[1]);
                             String cardClass  = qty <= 2 ? "critical" : (qty <= 5 && qty > 0 ? "low" : "");
                             String badgeClass = qty <= 2 ? "critical" : (qty <= 5 && qty > 0 ? "low" : "safe");
-                            String badgeLabel = qty <= 2 ? "CRITICAL"  : (qty <= 5 && qty > 0 ? "LOW"  : "SAFE");
+                            String badgeLabel = qty <= 2 ? "CRITICAL"  : (qty <= 5 && qty > 0 ? "LOW" : "SAFE");
                     %>
                     <div class="blood-group-card <%= cardClass %>"
                          onclick="window.location.href='<%= request.getContextPath() %>/inventory'">
@@ -463,8 +432,9 @@
                     </li>
                     <% } %>
                     <% if (pendingRequests > 0) { %>
-                    <li class="not-completed">
-                        <p>Process <%= pendingRequests %> pending requests</p><i class='bx bxs-heart'></i>
+                    <%-- ✅ CHANGED: onclick now goes to servlet URL, not .jsp --%>
+                    <li class="not-completed" onclick="window.location.href='<%= request.getContextPath() %>/patientBloodRequests'">
+                        <p>Process <%= pendingRequests %> patient requests</p><i class='bx bxs-heart'></i>
                     </li>
                     <% } %>
                     <% if (totalUnits == 0) { %>
@@ -491,8 +461,11 @@
                 <table>
                     <thead>
                     <tr>
-                        <th>Blood Group</th><th>Units</th>
-                        <th>Volume (ml)</th><th>Status</th><th>Action</th>
+                        <th>Blood Group</th>
+                        <th>Units</th>
+                        <th>Volume (ml)</th>
+                        <th>Status</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -565,22 +538,17 @@
         }
     });
 
-
     // Auto-refresh every 60 seconds
     setInterval(() => {
         if (document.visibilityState === 'visible') location.reload();
     }, 60000);
+
     // Highlight current page in sidebar
     document.addEventListener('DOMContentLoaded', function() {
         const currentPath = window.location.pathname;
-        const menuItems = document.querySelectorAll('.side-menu li a');
-
-        menuItems.forEach(item => {
+        document.querySelectorAll('.side-menu li a').forEach(item => {
             const href = item.getAttribute('href');
             if (href && currentPath.includes(href)) {
-                item.parentElement.classList.add('active');
-            } else if (currentPath.includes('adminDonationRequests.jsp') &&
-                item.getAttribute('href').includes('adminDonationRequests.jsp')) {
                 item.parentElement.classList.add('active');
             }
         });

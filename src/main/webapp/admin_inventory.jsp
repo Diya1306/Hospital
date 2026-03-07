@@ -116,7 +116,7 @@
         .status-badge.passed   { background:var(--light-green);   color:var(--green); }
         .status-badge.failed   { background:var(--light-primary); color:var(--primary); }
         .status-badge.available{ background:var(--light-green);   color:var(--green); }
-        .status-badge.reserved { background:var(--light-blue,#DBEAFE); color:var(--blue,#3B82F6); }
+        .status-badge.reserved { background:#DBEAFE; color:#3B82F6; }
         .status-badge.used     { background:var(--grey);          color:var(--dark-grey); }
         .status-badge.expired  { background:var(--light-primary); color:var(--primary); }
         .quantity-display { font-size:48px; font-weight:800; color:var(--primary); margin:16px 0; text-align:center; }
@@ -185,11 +185,11 @@
         <li>
             <a href="<%= request.getContextPath() %>/adminDonationRequests.jsp">
                 <i class='bx bxs-calendar-check'></i><span class="text">Donation Requests</span>
-                <% if (false) { %><span class="badge">0</span><% } %>
             </a>
         </li>
+        <%-- ✅ FIXED: was /patientBloodRequests.jsp — now hits the servlet --%>
         <li>
-            <a href="<%= request.getContextPath() %>/patientBloodRequests.jsp">
+            <a href="<%= request.getContextPath() %>/patientBloodRequests">
                 <i class='bx bxs-heart'></i><span class="text">Blood Request (Patient)</span>
             </a>
         </li>
@@ -201,9 +201,7 @@
     </ul>
     <ul class="side-menu bottom">
         <li>
-            <a href="#">
-                <i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span>
-            </a>
+            <a href="#"><i class='bx bxs-cog bx-spin-hover'></i><span class="text">Settings</span></a>
         </li>
         <li>
             <a href="<%= request.getContextPath() %>/admin-logout" class="logout">
@@ -318,10 +316,8 @@
             <tbody>
             <% if (!allBloodUnits.isEmpty()) {
                 for (BloodInventory unit : allBloodUnits) {
-                    String testBadge = unit.getTestingStatus() != null
-                            ? unit.getTestingStatus().toLowerCase() : "pending";
-                    String statusBadge = unit.getCurrentStatus() != null
-                            ? unit.getCurrentStatus().toLowerCase() : "available";
+                    String testBadge   = unit.getTestingStatus()  != null ? unit.getTestingStatus().toLowerCase()  : "pending";
+                    String statusBadge = unit.getCurrentStatus()  != null ? unit.getCurrentStatus().toLowerCase()  : "available";
             %>
             <tr>
                 <td>#<%= unit.getUnitId() %></td>
@@ -336,8 +332,7 @@
                 <td><span class="status-badge <%= testBadge %>"><%= unit.getTestingStatus() %></span></td>
                 <td><span class="status-badge <%= statusBadge %>"><%= unit.getCurrentStatus() %></span></td>
                 <td>
-                    <select class="action-select"
-                            onchange="updateTestingStatus(<%= unit.getUnitId() %>, this.value)">
+                    <select class="action-select" onchange="updateTestingStatus(<%= unit.getUnitId() %>, this.value)">
                         <option value="Pending" <%= "Pending".equals(unit.getTestingStatus()) ? "selected" : "" %>>Pending</option>
                         <option value="Passed"  <%= "Passed".equals(unit.getTestingStatus())  ? "selected" : "" %>>Passed</option>
                         <option value="Failed"  <%= "Failed".equals(unit.getTestingStatus())  ? "selected" : "" %>>Failed</option>
@@ -363,7 +358,6 @@
         <h2><i class='bx bx-plus-circle' style="color:var(--primary)"></i> Add New Blood Unit</h2>
         <form method="post" action="<%= request.getContextPath() %>/inventory">
             <input type="hidden" name="action" value="add">
-
             <div class="form-group">
                 <label>Blood Group *</label>
                 <select name="bloodGroup" required>
@@ -374,29 +368,24 @@
                     <option value="O+">O+</option><option value="O-">O-</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Quantity (Units) *</label>
                 <input type="number" name="quantity" min="1" max="50" required placeholder="Number of units">
                 <small style="color:var(--dark-grey); display:block; margin-top:4px;">1 unit = 450 ml of blood</small>
             </div>
-
             <div class="form-group">
                 <label>Donation Date *</label>
                 <input type="date" name="donationDate" required>
                 <small style="color:var(--dark-grey); display:block; margin-top:4px;">Expiry auto-calculated (42 days from donation)</small>
             </div>
-
             <div class="form-group">
                 <label>Donor ID *</label>
                 <input type="number" name="donorId" required placeholder="Enter donor ID">
             </div>
-
             <div class="form-group">
                 <label>Donor Name *</label>
                 <input type="text" name="donorName" required placeholder="Enter donor full name">
             </div>
-
             <div class="form-group">
                 <label>Donor Blood Group *</label>
                 <select name="donorBloodGroup" required>
@@ -407,12 +396,10 @@
                     <option value="O+">O+</option><option value="O-">O-</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Storage Location</label>
                 <input type="text" name="storageLocation" placeholder="E.g., Fridge A, Shelf 2">
             </div>
-
             <div class="modal-buttons">
                 <button type="button" class="btn btn-secondary" onclick="closeAddModal()">
                     <i class='bx bx-x'></i> Cancel
@@ -426,29 +413,24 @@
 </div>
 
 <script>
-    // Sidebar toggle
     const menuBar = document.querySelector('#content nav .bx.bx-menu');
     const sidebar = document.getElementById('sidebar');
     menuBar.addEventListener('click', function () { sidebar.classList.toggle('hide'); });
 
-    // Modal
     function openAddModal()  { document.getElementById('addModal').classList.add('show'); }
     function closeAddModal() { document.getElementById('addModal').classList.remove('show'); }
 
-    // Close modal on outside click
     window.addEventListener('click', function (e) {
         const modal = document.getElementById('addModal');
         if (e.target === modal) closeAddModal();
     });
 
-    // Set today as default donation date and prevent future dates
     document.addEventListener('DOMContentLoaded', function () {
         const today = new Date().toISOString().split('T')[0];
         const dateInput = document.querySelector('input[name="donationDate"]');
         if (dateInput) { dateInput.value = today; dateInput.max = today; }
     });
 
-    // Update testing status via form POST
     function updateTestingStatus(unitId, status) {
         if (!confirm('Update testing status to "' + status + '"?')) {
             window.location.reload();
@@ -457,13 +439,11 @@
         const form = document.createElement('form');
         form.method = 'post';
         form.action = '<%= request.getContextPath() %>/inventory';
-
         [['action', 'updateStatus'], ['unitId', unitId], ['testingStatus', status]].forEach(([n, v]) => {
             const input = document.createElement('input');
             input.type = 'hidden'; input.name = n; input.value = v;
             form.appendChild(input);
         });
-
         document.body.appendChild(form);
         form.submit();
     }
